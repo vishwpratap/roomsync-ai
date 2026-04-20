@@ -3,8 +3,8 @@
 RoomSync AI - Trait Computation Engine
 """
 
-from backend.db import execute_insert, execute_query
-from backend.scenarios import get_scenario_by_id
+from db import execute_insert, execute_query
+from scenarios import get_scenario_by_id
 
 TRAIT_KEYS = [
     "cleanliness_tolerance",

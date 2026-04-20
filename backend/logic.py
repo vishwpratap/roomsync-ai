@@ -3,7 +3,7 @@
 RoomSync AI - Compatibility Scoring Engine
 """
 
-from backend.db import DEFAULT_WEIGHT_VALUES, execute_query
+from db import DEFAULT_WEIGHT_VALUES, execute_query
 
 LIFESTYLE_WEIGHTS = {
     "cleanliness": {"weight": 20, "max_range": 4},

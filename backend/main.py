@@ -15,15 +15,15 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 
-from backend.classifier import classify_user_type
-from backend.db import execute_insert, execute_query, execute_update, ensure_schema, get_match_score, get_top_matches_for_user, save_match_score, is_db_connected
-from backend.logic import calculate_compatibility, generate_recommendation, get_runtime_weight_config
-from backend.match_cache import precompute_matches_for_user
-from backend.ml import run_clustering
-from backend.models import AdminLogin, CompatibilityRequest, RoommateRequestInput, ScenarioCreateInput, ScenarioProfileInput, UserLogin, UserProfileInput, UserSignup, WeightsUpdateInput
-from backend.risk import detect_risks
-from backend.scenarios import create_scenario, get_all_scenarios, get_scenario_by_id, seed_default_scenarios, update_scenario
-from backend.traits import compute_traits, derive_personality, derive_preferences, get_user_traits, save_scenario_responses, save_traits
+from classifier import classify_user_type
+from db import execute_insert, execute_query, execute_update, ensure_schema, get_match_score, get_top_matches_for_user, save_match_score, is_db_connected
+from logic import calculate_compatibility, generate_recommendation, get_runtime_weight_config
+from match_cache import precompute_matches_for_user
+from ml import run_clustering
+from models import AdminLogin, CompatibilityRequest, RoommateRequestInput, ScenarioCreateInput, ScenarioProfileInput, UserLogin, UserProfileInput, UserSignup, WeightsUpdateInput
+from risk import detect_risks
+from scenarios import create_scenario, get_all_scenarios, get_scenario_by_id, seed_default_scenarios, update_scenario
+from traits import compute_traits, derive_personality, derive_preferences, get_user_traits, save_scenario_responses, save_traits
 
 app = FastAPI(title="RoomSync AI", description="Behavior-based roommate compatibility platform", version="3.0.0")
 
@@ -274,7 +274,7 @@ async def add_user(data: UserProfileInput):
     execute_update("UPDATE users SET has_profile=TRUE WHERE id=%s", (data.user_id,))
     
     # Precompute matches with all other users
-    from backend.match_cache import precompute_matches_for_user
+    from match_cache import precompute_matches_for_user
     precompute_matches_for_user(data.user_id)
     
     return {"message": "Profile saved successfully", "user_id": data.user_id, "roommate_type": roommate_type}
@@ -363,7 +363,7 @@ async def get_matches(user_id: int):
     
     # If no cached matches, precompute them now
     if not cached_matches:
-        from backend.match_cache import precompute_matches_for_user
+        from match_cache import precompute_matches_for_user
         precompute_matches_for_user(user_id)
         cached_matches = get_top_matches_for_user(user_id, limit=5)
     
@@ -783,7 +783,7 @@ async def admin_get_weights(admin=Depends(_require_admin)):
 
 @app.put("/admin/weights")
 async def admin_update_weights(data: WeightsUpdateInput, admin=Depends(_require_admin)):
-    from backend.match_cache import recompute_all_matches
+    from match_cache import recompute_all_matches
     for feature, value in data.model_dump().items():
         execute_insert("INSERT INTO weights (feature, value) VALUES (%s, %s) ON DUPLICATE KEY UPDATE value=VALUES(value)", (feature, value))
     

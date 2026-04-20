@@ -6,7 +6,7 @@ Groups users into lifestyle clusters using preferences and behavioral traits.
 import numpy as np
 from sklearn.cluster import KMeans
 from sklearn.preprocessing import StandardScaler
-from backend.db import execute_query, execute_update
+from db import execute_query, execute_update
 
 # Features used for clustering (preferences + traits when available)
 PREF_FEATURES = ["sleep", "cleanliness", "noise", "smoking", "social"]

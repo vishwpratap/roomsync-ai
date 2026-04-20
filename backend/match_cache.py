@@ -4,10 +4,10 @@ Precomputes and caches compatibility scores for performance optimization
 """
 
 import json
-from backend.db import execute_query, execute_update, save_match_score, invalidate_user_matches
-from backend.logic import calculate_compatibility, generate_recommendation
-from backend.risk import detect_risks
-from backend.traits import get_user_traits
+from db import execute_query, execute_update, save_match_score, invalidate_user_matches
+from logic import calculate_compatibility, generate_recommendation
+from risk import detect_risks
+from traits import get_user_traits
 
 
 def precompute_matches_for_user(user_id):

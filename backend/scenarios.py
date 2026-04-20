@@ -4,7 +4,7 @@ RoomSync AI - Scenario Management and Seed Data
 """
 
 import json
-from backend.db import execute_insert, execute_query, execute_update
+from db import execute_insert, execute_query, execute_update
 
 DEFAULT_SCENARIOS = [
     {
