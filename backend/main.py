@@ -16,7 +16,7 @@ from fastapi.responses import FileResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 
 from backend.classifier import classify_user_type
-from backend.db import execute_insert, execute_query, execute_update, ensure_schema, get_match_score, get_top_matches_for_user, save_match_score
+from backend.db import execute_insert, execute_query, execute_update, ensure_schema, get_match_score, get_top_matches_for_user, save_match_score, is_db_connected
 from backend.logic import calculate_compatibility, generate_recommendation, get_runtime_weight_config
 from backend.match_cache import precompute_matches_for_user
 from backend.ml import run_clustering
@@ -46,16 +46,26 @@ if os.path.exists(UPLOADS_DIR):
 
 @app.exception_handler(Exception)
 async def unhandled_exception_handler(request: Request, exc: Exception):
+    # TEMPORARILY DISABLED FOR CLOUD DEPLOYMENT
+    # If the error is related to None/DB connection, return a safe response
+    error_msg = str(exc).lower()
+    if "none" in error_msg or "connection" in error_msg or "mysql" in error_msg:
+        return JSONResponse(
+            status_code=503,
+            content={"detail": "Database not connected - temporarily disabled for cloud deployment"}
+        )
     return JSONResponse(status_code=500, content={"detail": "Internal Server Error"})
 
 
 @app.on_event("startup")
 async def startup_event():
+    # TEMPORARILY DISABLED FOR CLOUD DEPLOYMENT
     try:
-        ensure_schema()
-        seed_default_scenarios()
+        # ensure_schema()
+        # seed_default_scenarios()
+        print("[Startup] Database initialization skipped (temporarily disabled for cloud deployment)")
     except Exception as exc:
-        print(f"[Startup] Initialization skipped: {exc}")
+        print(f"[Startup] Error initializing database: {exc}")
 
 
 @app.get("/")
@@ -68,9 +78,10 @@ async def serve_frontend():
 
 @app.post("/init-db")
 async def init_db():
-    ensure_schema()
-    seed_default_scenarios()
-    return {"message": "Database schema and seed data are ready."}
+    # TEMPORARILY DISABLED FOR CLOUD DEPLOYMENT
+    # ensure_schema()
+    # seed_default_scenarios()
+    return {"message": "Database initialization temporarily disabled for cloud deployment"}
 
 
 def _parse_json_field(value, default=None):
@@ -206,6 +217,9 @@ def _analytics_snapshot():
 
 @app.post("/signup")
 async def signup(data: UserSignup):
+    # TEMPORARILY DISABLED FOR CLOUD DEPLOYMENT
+    if not is_db_connected():
+        raise HTTPException(status_code=503, detail="Database not connected - temporarily disabled for cloud deployment")
     existing = execute_query("SELECT id FROM users WHERE name=%s", (data.name,), fetch_one=True)
     if existing:
         raise HTTPException(status_code=400, detail="Username already exists")
@@ -216,6 +230,9 @@ async def signup(data: UserSignup):
 
 @app.post("/login")
 async def login(data: UserLogin):
+    # TEMPORARILY DISABLED FOR CLOUD DEPLOYMENT
+    if not is_db_connected():
+        raise HTTPException(status_code=503, detail="Database not connected - temporarily disabled for cloud deployment")
     user = execute_query("SELECT id, name, password_hash, age, roommate_type FROM users WHERE name=%s", (data.name,), fetch_one=True)
     if not user or not bcrypt.checkpw(data.password.encode("utf-8"), user["password_hash"].encode("utf-8")):
         raise HTTPException(status_code=401, detail="Invalid username or password")
@@ -224,6 +241,9 @@ async def login(data: UserLogin):
 
 @app.post("/admin/login")
 async def admin_login(data: AdminLogin):
+    # TEMPORARILY DISABLED FOR CLOUD DEPLOYMENT
+    if not is_db_connected():
+        raise HTTPException(status_code=503, detail="Database not connected - temporarily disabled for cloud deployment")
     admin = execute_query("SELECT id, email, password_hash FROM admins WHERE email=%s", (data.email,), fetch_one=True)
     if not admin or not bcrypt.checkpw(data.password.encode("utf-8"), admin["password_hash"].encode("utf-8")):
         raise HTTPException(status_code=401, detail="Invalid admin credentials")
@@ -232,6 +252,9 @@ async def admin_login(data: AdminLogin):
 
 @app.get("/scenarios")
 async def list_scenarios():
+    # TEMPORARILY DISABLED FOR CLOUD DEPLOYMENT
+    if not is_db_connected():
+        return []
     return get_all_scenarios()
 
 
@@ -320,6 +343,9 @@ async def update_user_profile(user_id: int, age: Optional[int] = None, professio
 @app.get("/users")
 async def list_users(search: str = Query(default="")):
     """Return all users without compatibility scores for the Explore Users section"""
+    # TEMPORARILY DISABLED FOR CLOUD DEPLOYMENT
+    if not is_db_connected():
+        return []
     if search:
         users = execute_query("SELECT id, name, age, profession, gender, roommate_type, cluster_id FROM users WHERE age IS NOT NULL AND name LIKE %s ORDER BY name", (f"%{search}%",), fetch_all=True)
     else:
@@ -329,6 +355,9 @@ async def list_users(search: str = Query(default="")):
 
 @app.get("/matches/{user_id}")
 async def get_matches(user_id: int):
+    # TEMPORARILY DISABLED FOR CLOUD DEPLOYMENT
+    if not is_db_connected():
+        return []
     # Try to get cached matches first
     cached_matches = get_top_matches_for_user(user_id, limit=5)
     
@@ -419,6 +448,9 @@ async def get_matches(user_id: int):
 
 @app.post("/compatibility")
 async def check_compatibility(data: CompatibilityRequest):
+    # TEMPORARILY DISABLED FOR CLOUD DEPLOYMENT
+    if not is_db_connected():
+        raise HTTPException(status_code=503, detail="Database not connected - temporarily disabled for cloud deployment")
     if data.user1_id == data.user2_id:
         raise HTTPException(status_code=400, detail="Cannot compare a user with themselves")
     

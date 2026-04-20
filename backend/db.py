@@ -34,15 +34,23 @@ def get_pool():
         raise
 
 
-pool = get_pool()
+# TEMPORARILY DISABLED FOR CLOUD DEPLOYMENT
+# pool = get_pool()
+pool = None
 
 
 def get_connection():
+    # TEMPORARILY DISABLED FOR CLOUD DEPLOYMENT
+    if pool is None:
+        return None
     return pool.get_connection()
 
 
 def execute_query(query, params=None, fetch_one=False, fetch_all=False):
+    # TEMPORARILY DISABLED FOR CLOUD DEPLOYMENT
     conn = get_connection()
+    if conn is None:
+        return None
     cursor = conn.cursor(dictionary=True)
     try:
         cursor.execute(query, params or ())
@@ -50,14 +58,18 @@ def execute_query(query, params=None, fetch_one=False, fetch_all=False):
             return cursor.fetchone()
         if fetch_all:
             return cursor.fetchall()
-        return None
+        conn.commit()
+        return cursor.lastrowid
     finally:
         cursor.close()
         conn.close()
 
 
 def execute_insert(query, params=None):
+    # TEMPORARILY DISABLED FOR CLOUD DEPLOYMENT
     conn = get_connection()
+    if conn is None:
+        return None
     cursor = conn.cursor()
     try:
         cursor.execute(query, params or ())
@@ -69,7 +81,10 @@ def execute_insert(query, params=None):
 
 
 def execute_update(query, params=None):
+    # TEMPORARILY DISABLED FOR CLOUD DEPLOYMENT
     conn = get_connection()
+    if conn is None:
+        return None
     cursor = conn.cursor()
     try:
         cursor.execute(query, params or ())
@@ -78,6 +93,11 @@ def execute_update(query, params=None):
     finally:
         cursor.close()
         conn.close()
+
+
+def is_db_connected():
+    # TEMPORARILY DISABLED FOR CLOUD DEPLOYMENT
+    return pool is not None
 
 
 def execute_many(query, data_list):
