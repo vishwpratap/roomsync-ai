@@ -9,6 +9,8 @@ import uuid
 import bcrypt
 from collections import Counter
 from typing import Optional
+import psycopg2
+from psycopg2.extras import RealDictCursor
 
 from fastapi import Depends, FastAPI, File, Form, Header, HTTPException, Query, Request, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
@@ -82,6 +84,230 @@ async def init_db():
     # ensure_schema()
     # seed_default_scenarios()
     return {"message": "Database initialization temporarily disabled for cloud deployment"}
+
+
+@app.get("/setup-db")
+async def setup_db():
+    """Setup PostgreSQL database schema for cloud deployment"""
+    # Get PostgreSQL connection string from environment (Render provides DATABASE_URL)
+    database_url = os.getenv("DATABASE_URL")
+    if not database_url:
+        raise HTTPException(status_code=500, detail="DATABASE_URL environment variable not set")
+
+    try:
+        conn = psycopg2.connect(database_url)
+        cursor = conn.cursor()
+
+        # Execute PostgreSQL schema
+        cursor.execute("""
+            -- ==============================
+            -- RoomSync AI PostgreSQL Schema
+            -- ==============================
+
+            -- USERS
+            CREATE TABLE IF NOT EXISTS users (
+                id SERIAL PRIMARY KEY,
+                name VARCHAR(100) NOT NULL,
+                age INTEGER,
+                profession VARCHAR(100),
+                gender VARCHAR(20),
+                password_hash VARCHAR(255) NOT NULL,
+                roommate_type VARCHAR(100) DEFAULT 'Balanced Roommate',
+                cluster_id INTEGER,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            );
+
+            -- ADMINS
+            CREATE TABLE IF NOT EXISTS admins (
+                id SERIAL PRIMARY KEY,
+                email VARCHAR(255) UNIQUE NOT NULL,
+                password_hash VARCHAR(255) NOT NULL,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            );
+
+            -- PREFERENCES
+            CREATE TABLE IF NOT EXISTS preferences (
+                user_id INTEGER PRIMARY KEY,
+                sleep INTEGER CHECK (sleep BETWEEN 0 AND 2),
+                cleanliness INTEGER CHECK (cleanliness BETWEEN 1 AND 5),
+                noise INTEGER CHECK (noise BETWEEN 1 AND 5),
+                smoking INTEGER CHECK (smoking BETWEEN 0 AND 2),
+                guests INTEGER CHECK (guests BETWEEN 0 AND 3),
+                social INTEGER CHECK (social BETWEEN 1 AND 5),
+                cooking INTEGER CHECK (cooking BETWEEN 0 AND 3),
+                FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+            );
+
+            -- PERSONALITY
+            CREATE TABLE IF NOT EXISTS personality (
+                user_id INTEGER PRIMARY KEY,
+                introvert_extrovert INTEGER CHECK (introvert_extrovert BETWEEN 1 AND 5),
+                conflict_style INTEGER CHECK (conflict_style BETWEEN 0 AND 2),
+                routine_level INTEGER CHECK (routine_level BETWEEN 1 AND 5),
+                sharing_level INTEGER CHECK (sharing_level BETWEEN 1 AND 5),
+                FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+            );
+
+            -- USER TRAITS
+            CREATE TABLE IF NOT EXISTS user_traits (
+                user_id INTEGER PRIMARY KEY,
+                cleanliness_tolerance INTEGER DEFAULT 3,
+                noise_tolerance INTEGER DEFAULT 3,
+                social_tolerance INTEGER DEFAULT 3,
+                conflict_style INTEGER DEFAULT 3,
+                flexibility INTEGER DEFAULT 3,
+                FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+            );
+
+            -- WEIGHTS
+            CREATE TABLE IF NOT EXISTS weights (
+                feature VARCHAR(50) PRIMARY KEY,
+                value NUMERIC(10,2) DEFAULT 1.00,
+                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            );
+
+            -- SCENARIOS
+            CREATE TABLE IF NOT EXISTS scenarios (
+                id SERIAL PRIMARY KEY,
+                slug VARCHAR(100) UNIQUE NOT NULL,
+                title VARCHAR(150) NOT NULL,
+                question TEXT NOT NULL,
+                description TEXT,
+                icon VARCHAR(20),
+                category VARCHAR(50),
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            );
+
+            -- SCENARIO OPTIONS
+            CREATE TABLE IF NOT EXISTS scenario_options (
+                id SERIAL PRIMARY KEY,
+                scenario_id INTEGER,
+                option_order INTEGER DEFAULT 0,
+                option_text VARCHAR(255),
+                emoji VARCHAR(20),
+                trait_mapping_json JSONB,
+                FOREIGN KEY (scenario_id) REFERENCES scenarios(id) ON DELETE CASCADE
+            );
+
+            -- SCENARIO RESPONSES
+            CREATE TABLE IF NOT EXISTS scenario_responses (
+                user_id INTEGER,
+                scenario_id INTEGER,
+                selected_option INTEGER,
+                PRIMARY KEY (user_id, scenario_id),
+                FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+                FOREIGN KEY (scenario_id) REFERENCES scenarios(id) ON DELETE CASCADE
+            );
+
+            -- ROOM POSTS
+            CREATE TABLE IF NOT EXISTS room_posts (
+                id SERIAL PRIMARY KEY,
+                user_id INTEGER,
+                title VARCHAR(150),
+                description TEXT,
+                rent NUMERIC(10,2),
+                location VARCHAR(255),
+                gender_preference VARCHAR(50),
+                lifestyle_preference JSONB DEFAULT '{}',
+                personality_preference JSONB DEFAULT '{}',
+                image_url TEXT,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+            );
+
+            -- ROOM IMAGES
+            CREATE TABLE IF NOT EXISTS room_images (
+                id SERIAL PRIMARY KEY,
+                post_id INTEGER,
+                image_url TEXT,
+                FOREIGN KEY (post_id) REFERENCES room_posts(id) ON DELETE CASCADE
+            );
+
+            -- ROOMMATE REQUESTS
+            CREATE TABLE IF NOT EXISTS roommate_requests (
+                id SERIAL PRIMARY KEY,
+                post_id INTEGER,
+                requester_user_id INTEGER,
+                owner_user_id INTEGER,
+                message VARCHAR(255),
+                status VARCHAR(30) DEFAULT 'PENDING',
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY (post_id) REFERENCES room_posts(id) ON DELETE CASCADE,
+                FOREIGN KEY (requester_user_id) REFERENCES users(id) ON DELETE CASCADE,
+                FOREIGN KEY (owner_user_id) REFERENCES users(id) ON DELETE CASCADE
+            );
+
+            -- MATCH LOGS
+            CREATE TABLE IF NOT EXISTS match_logs (
+                id SERIAL PRIMARY KEY,
+                source_type VARCHAR(30),
+                source_id INTEGER,
+                target_type VARCHAR(30),
+                target_id INTEGER,
+                compatibility_score NUMERIC(5,2),
+                risk_level VARCHAR(10),
+                conflict_types_json JSONB,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            );
+
+            -- MATCH SCORES
+            CREATE TABLE IF NOT EXISTS match_scores (
+                user1_id INTEGER,
+                user2_id INTEGER,
+                compatibility_score NUMERIC(5,2),
+                lifestyle_score NUMERIC(5,2),
+                personality_score NUMERIC(5,2),
+                trait_score NUMERIC(5,2),
+                risk_level VARCHAR(10),
+                highlights_json JSONB,
+                warnings_json JSONB,
+                conflicts_json JSONB,
+                calculated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                PRIMARY KEY (user1_id, user2_id)
+            );
+
+            CREATE INDEX IF NOT EXISTS idx_match_user1 ON match_scores(user1_id);
+            CREATE INDEX IF NOT EXISTS idx_match_user2 ON match_scores(user2_id);
+
+            -- CONVERSATIONS
+            CREATE TABLE IF NOT EXISTS conversations (
+                id SERIAL PRIMARY KEY,
+                user1_id INTEGER,
+                user2_id INTEGER,
+                post_id INTEGER,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                UNIQUE (user1_id, user2_id, post_id),
+                FOREIGN KEY (user1_id) REFERENCES users(id) ON DELETE CASCADE,
+                FOREIGN KEY (user2_id) REFERENCES users(id) ON DELETE CASCADE,
+                FOREIGN KEY (post_id) REFERENCES room_posts(id) ON DELETE CASCADE
+            );
+
+            -- MESSAGES
+            CREATE TABLE IF NOT EXISTS messages (
+                id SERIAL PRIMARY KEY,
+                conversation_id INTEGER,
+                sender_id INTEGER,
+                message_content TEXT,
+                read_status BOOLEAN DEFAULT FALSE,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY (conversation_id) REFERENCES conversations(id) ON DELETE CASCADE,
+                FOREIGN KEY (sender_id) REFERENCES users(id) ON DELETE CASCADE
+            );
+
+            CREATE INDEX IF NOT EXISTS idx_messages_conversation ON messages(conversation_id);
+            CREATE INDEX IF NOT EXISTS idx_messages_sender ON messages(sender_id);
+            CREATE INDEX IF NOT EXISTS idx_messages_created ON messages(created_at);
+        """)
+
+        conn.commit()
+        cursor.close()
+        conn.close()
+
+        return {"status": "done", "message": "PostgreSQL database schema created successfully"}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Database setup failed: {str(e)}")
 
 
 def _parse_json_field(value, default=None):
