@@ -5,18 +5,12 @@ RoomSync AI - Database Connection, Schema, and Seed Helpers
 
 import os
 import bcrypt
-import mysql.connector
-from mysql.connector import pooling
+import psycopg2
+from psycopg2 import pool
+from psycopg2.extras import RealDictCursor
 
-DB_CONFIG = {
-    "host": os.getenv("ROOMSYNC_DB_HOST", "localhost"),
-    "user": os.getenv("ROOMSYNC_DB_USER", "root"),
-    "password": os.getenv("ROOMSYNC_DB_PASSWORD", ""),
-    "database": os.getenv("ROOMSYNC_DB_NAME", "roomsync_ai"),
-    "pool_name": "roomsync_pool",
-    "pool_size": 5,
-    "pool_reset_session": True,
-}
+# PostgreSQL connection using DATABASE_URL (Render provides this)
+DATABASE_URL = os.getenv("DATABASE_URL")
 
 DEFAULT_WEIGHT_VALUES = {
     "cleanliness": 1.25,
@@ -28,30 +22,35 @@ DEFAULT_WEIGHT_VALUES = {
 
 def get_pool():
     try:
-        return pooling.MySQLConnectionPool(**DB_CONFIG)
-    except mysql.connector.Error as exc:
+        return pool.SimpleConnectionPool(
+            minconn=1,
+            maxconn=5,
+            dsn=DATABASE_URL
+        )
+    except Exception as exc:
         print(f"[DB] Error creating connection pool: {exc}")
         raise
 
 
-# TEMPORARILY DISABLED FOR CLOUD DEPLOYMENT
-# pool = get_pool()
-pool = None
+# Create connection pool
+try:
+    pool = get_pool()
+except Exception as exc:
+    print(f"[DB] Failed to initialize connection pool: {exc}")
+    pool = None
 
 
 def get_connection():
-    # TEMPORARILY DISABLED FOR CLOUD DEPLOYMENT
     if pool is None:
         return None
-    return pool.get_connection()
+    return pool.getconn()
 
 
 def execute_query(query, params=None, fetch_one=False, fetch_all=False):
-    # TEMPORARILY DISABLED FOR CLOUD DEPLOYMENT
     conn = get_connection()
     if conn is None:
         return None
-    cursor = conn.cursor(dictionary=True)
+    cursor = conn.cursor(cursor_factory=RealDictCursor)
     try:
         cursor.execute(query, params or ())
         if fetch_one:
@@ -62,11 +61,10 @@ def execute_query(query, params=None, fetch_one=False, fetch_all=False):
         return cursor.lastrowid
     finally:
         cursor.close()
-        conn.close()
+        pool.putconn(conn)
 
 
 def execute_insert(query, params=None):
-    # TEMPORARILY DISABLED FOR CLOUD DEPLOYMENT
     conn = get_connection()
     if conn is None:
         return None
@@ -77,11 +75,10 @@ def execute_insert(query, params=None):
         return cursor.lastrowid
     finally:
         cursor.close()
-        conn.close()
+        pool.putconn(conn)
 
 
 def execute_update(query, params=None):
-    # TEMPORARILY DISABLED FOR CLOUD DEPLOYMENT
     conn = get_connection()
     if conn is None:
         return None
@@ -92,12 +89,9 @@ def execute_update(query, params=None):
         return cursor.rowcount
     finally:
         cursor.close()
-        conn.close()
+        pool.putconn(conn)
 
 
-def is_db_connected():
-    # TEMPORARILY DISABLED FOR CLOUD DEPLOYMENT
-    return pool is not None
 
 
 def execute_many(query, data_list):
@@ -108,7 +102,7 @@ def execute_many(query, data_list):
         conn.commit()
     finally:
         cursor.close()
-        conn.close()
+        pool.putconn(conn)
 
 
 def ensure_schema():

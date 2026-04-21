@@ -1,6 +1,5 @@
 fastapi
 uvicorn[standard]
-mysql-connector-python
 scikit-learn
 numpy
 pydantic
