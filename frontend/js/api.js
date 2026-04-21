@@ -2,7 +2,7 @@
 /**
  * RoomSync AI - API Client
  */
-const API_BASE = "http://localhost:8000";
+const API_BASE = "https://roomsync-ai.onrender.com";
 
 const Api = {
     async request(method, path, body = null, extraHeaders = {}) {
