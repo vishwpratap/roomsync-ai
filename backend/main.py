@@ -76,6 +76,33 @@ async def init_db():
     return {"message": "Database schema and seed data are ready."}
 
 
+@app.post("/cleanup-incomplete-profiles")
+async def cleanup_incomplete_profiles():
+    """Delete users who haven't completed onboarding (no preferences/personality data)"""
+    try:
+        # Get users without preferences or personality data
+        incomplete_users = execute_query(
+            """
+            SELECT u.id, u.name
+            FROM users u
+            LEFT JOIN preferences p ON u.id = p.user_id
+            LEFT JOIN personality per ON u.id = per.user_id
+            WHERE p.user_id IS NULL OR per.user_id IS NULL
+            """,
+            fetch_all=True
+        ) or []
+
+        deleted_count = 0
+        for user in incomplete_users:
+            # Delete user (cascades to related tables)
+            execute_update("DELETE FROM users WHERE id=%s", (user["id"],))
+            deleted_count += 1
+
+        return {"message": f"Deleted {deleted_count} incomplete profiles", "deleted_count": deleted_count}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Cleanup failed: {str(e)}")
+
+
 @app.get("/setup-db")
 async def setup_db():
     """Setup PostgreSQL database schema for cloud deployment"""
@@ -315,6 +342,89 @@ async def setup_db():
                     )
             conn.commit()
             print(f"[Setup] Seeded {len(DEFAULT_SCENARIOS)} scenarios")
+
+        # Seed admin user
+        cursor.execute("SELECT id FROM admins WHERE email=%s", ("admin@roomsync.ai",))
+        if not cursor.fetchone():
+            admin_password_hash = bcrypt.hashpw("admin123".encode("utf-8"), bcrypt.gensalt()).decode("utf-8")
+            cursor.execute(
+                "INSERT INTO admins (email, password_hash) VALUES (%s, %s)",
+                ("admin@roomsync.ai", admin_password_hash)
+            )
+            conn.commit()
+            print("[Setup] Seeded admin user (admin@roomsync.ai / admin123)")
+        else:
+            print("[Setup] Admin user already exists, skipping seed")
+
+        # Seed demo users
+        demo_users = [
+            {
+                "name": "demo1",
+                "password": "demo123",
+                "age": 24,
+                "profession": "Software Engineer",
+                "gender": "Male",
+                "preferences": {"sleep": 1, "cleanliness": 4, "noise": 3, "smoking": 0, "guests": 1, "social": 3, "cooking": 2},
+                "personality": {"introvert_extrovert": 3, "conflict_style": 2, "routine_level": 4, "sharing_level": 3},
+                "traits": {"cleanliness_tolerance": 4, "noise_tolerance": 3, "social_tolerance": 3, "conflict_style": 2, "flexibility": 3}
+            },
+            {
+                "name": "demo2",
+                "password": "demo123",
+                "age": 22,
+                "profession": "Student",
+                "gender": "Female",
+                "preferences": {"sleep": 2, "cleanliness": 5, "noise": 1, "smoking": 0, "guests": 0, "social": 2, "cooking": 1},
+                "personality": {"introvert_extrovert": 2, "conflict_style": 1, "routine_level": 5, "sharing_level": 2},
+                "traits": {"cleanliness_tolerance": 5, "noise_tolerance": 1, "social_tolerance": 2, "conflict_style": 1, "flexibility": 2}
+            },
+            {
+                "name": "demo3",
+                "password": "demo123",
+                "age": 26,
+                "profession": "Designer",
+                "gender": "Non-binary",
+                "preferences": {"sleep": 0, "cleanliness": 3, "noise": 5, "smoking": 1, "guests": 3, "social": 5, "cooking": 3},
+                "personality": {"introvert_extrovert": 5, "conflict_style": 3, "routine_level": 2, "sharing_level": 5},
+                "traits": {"cleanliness_tolerance": 3, "noise_tolerance": 5, "social_tolerance": 5, "conflict_style": 3, "flexibility": 5}
+            }
+        ]
+
+        for demo in demo_users:
+            cursor.execute("SELECT id FROM users WHERE name=%s", (demo["name"],))
+            if not cursor.fetchone():
+                password_hash = bcrypt.hashpw(demo["password"].encode("utf-8"), bcrypt.gensalt()).decode("utf-8")
+                cursor.execute(
+                    "INSERT INTO users (name, password_hash, age, profession, gender, roommate_type) VALUES (%s, %s, %s, %s, %s, %s) RETURNING id",
+                    (demo["name"], password_hash, demo["age"], demo["profession"], demo["gender"], "Balanced Roommate")
+                )
+                user_id = cursor.fetchone()[0]
+                
+                # Insert preferences
+                cursor.execute(
+                    "INSERT INTO preferences (user_id, sleep, cleanliness, noise, smoking, guests, social, cooking) VALUES (%s, %s, %s, %s, %s, %s, %s, %s)",
+                    (user_id, demo["preferences"]["sleep"], demo["preferences"]["cleanliness"], demo["preferences"]["noise"],
+                     demo["preferences"]["smoking"], demo["preferences"]["guests"], demo["preferences"]["social"], demo["preferences"]["cooking"])
+                )
+                
+                # Insert personality
+                cursor.execute(
+                    "INSERT INTO personality (user_id, introvert_extrovert, conflict_style, routine_level, sharing_level) VALUES (%s, %s, %s, %s, %s)",
+                    (user_id, demo["personality"]["introvert_extrovert"], demo["personality"]["conflict_style"],
+                     demo["personality"]["routine_level"], demo["personality"]["sharing_level"])
+                )
+                
+                # Insert traits
+                cursor.execute(
+                    "INSERT INTO user_traits (user_id, cleanliness_tolerance, noise_tolerance, social_tolerance, conflict_style, flexibility) VALUES (%s, %s, %s, %s, %s, %s)",
+                    (user_id, demo["traits"]["cleanliness_tolerance"], demo["traits"]["noise_tolerance"],
+                     demo["traits"]["social_tolerance"], demo["traits"]["conflict_style"], demo["traits"]["flexibility"])
+                )
+                
+                conn.commit()
+                print(f"[Setup] Seeded demo user: {demo['name']}")
+            else:
+                print(f"[Setup] Demo user {demo['name']} already exists, skipping seed")
 
         cursor.close()
         conn.close()
