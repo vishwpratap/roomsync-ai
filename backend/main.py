@@ -54,11 +54,11 @@ async def unhandled_exception_handler(request: Request, exc: Exception):
 @app.on_event("startup")
 async def startup_event():
     try:
-        ensure_schema()
+        # Skip ensure_schema - use /setup-db endpoint for PostgreSQL
         seed_default_scenarios()
-        print("[Startup] Database initialized successfully")
+        print("[Startup] Default scenarios seeded successfully")
     except Exception as exc:
-        print(f"[Startup] Error initializing database: {exc}")
+        print(f"[Startup] Error seeding scenarios: {exc}")
 
 
 @app.get("/")
@@ -292,10 +292,34 @@ async def setup_db():
         """)
 
         conn.commit()
+
+        # Seed default scenarios
+        from scenarios import DEFAULT_SCENARIOS
+        import json
+
+        # Check if scenarios already exist
+        cursor.execute("SELECT id FROM scenarios LIMIT 1")
+        if cursor.fetchone():
+            print("[Setup] Scenarios already exist, skipping seed")
+        else:
+            for scenario in DEFAULT_SCENARIOS:
+                cursor.execute(
+                    "INSERT INTO scenarios (slug, title, question, description, icon, category) VALUES (%s, %s, %s, %s, %s, %s) RETURNING id",
+                    (scenario["slug"], scenario["title"], scenario["question"], scenario.get("description"), scenario.get("icon"), scenario.get("category"))
+                )
+                scenario_id = cursor.fetchone()[0]
+                for index, option in enumerate(scenario["options"]):
+                    cursor.execute(
+                        "INSERT INTO scenario_options (scenario_id, option_order, option_text, emoji, trait_mapping_json) VALUES (%s, %s, %s, %s, %s)",
+                        (scenario_id, index, option["text"], option.get("emoji"), json.dumps(option["traits"]))
+                    )
+            conn.commit()
+            print(f"[Setup] Seeded {len(DEFAULT_SCENARIOS)} scenarios")
+
         cursor.close()
         conn.close()
 
-        return {"status": "done", "message": "PostgreSQL database schema created successfully"}
+        return {"status": "done", "message": "PostgreSQL database schema created and scenarios seeded successfully"}
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Database setup failed: {str(e)}")
 
