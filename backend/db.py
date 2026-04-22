@@ -347,15 +347,15 @@ def save_match_score(user1_id, user2_id, compatibility_score, lifestyle_score, p
     query = """
     INSERT INTO match_scores (user1_id, user2_id, compatibility_score, lifestyle_score, personality_score, trait_score, risk_level, highlights_json, warnings_json, conflicts_json)
     VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
-    ON DUPLICATE KEY UPDATE
-    compatibility_score = VALUES(compatibility_score),
-    lifestyle_score = VALUES(lifestyle_score),
-    personality_score = VALUES(personality_score),
-    trait_score = VALUES(trait_score),
-    risk_level = VALUES(risk_level),
-    highlights_json = VALUES(highlights_json),
-    warnings_json = VALUES(warnings_json),
-    conflicts_json = VALUES(conflicts_json),
+    ON CONFLICT (user1_id, user2_id) DO UPDATE SET
+    compatibility_score = EXCLUDED.compatibility_score,
+    lifestyle_score = EXCLUDED.lifestyle_score,
+    personality_score = EXCLUDED.personality_score,
+    trait_score = EXCLUDED.trait_score,
+    risk_level = EXCLUDED.risk_level,
+    highlights_json = EXCLUDED.highlights_json,
+    warnings_json = EXCLUDED.warnings_json,
+    conflicts_json = EXCLUDED.conflicts_json,
     calculated_at = CURRENT_TIMESTAMP
     """
     return execute_update(query, (user1_id, user2_id, compatibility_score, lifestyle_score, personality_score, trait_score, risk_level,

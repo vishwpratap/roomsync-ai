@@ -85,12 +85,12 @@ def save_traits(user_id: int, traits: dict):
         """
         INSERT INTO user_traits (user_id, cleanliness_tolerance, noise_tolerance, social_tolerance, conflict_style, flexibility)
         VALUES (%s,%s,%s,%s,%s,%s)
-        ON DUPLICATE KEY UPDATE
-            cleanliness_tolerance=VALUES(cleanliness_tolerance),
-            noise_tolerance=VALUES(noise_tolerance),
-            social_tolerance=VALUES(social_tolerance),
-            conflict_style=VALUES(conflict_style),
-            flexibility=VALUES(flexibility)
+        ON CONFLICT (user_id) DO UPDATE SET
+            cleanliness_tolerance=EXCLUDED.cleanliness_tolerance,
+            noise_tolerance=EXCLUDED.noise_tolerance,
+            social_tolerance=EXCLUDED.social_tolerance,
+            conflict_style=EXCLUDED.conflict_style,
+            flexibility=EXCLUDED.flexibility
         """,
         (user_id, traits["cleanliness_tolerance"], traits["noise_tolerance"], traits["social_tolerance"], traits["conflict_style"], traits["flexibility"]),
     )
@@ -102,7 +102,7 @@ def save_scenario_responses(user_id: int, responses: list):
         if not scenario:
             continue
         execute_insert(
-            "INSERT INTO scenario_responses (user_id, scenario_id, selected_option) VALUES (%s, %s, %s) ON DUPLICATE KEY UPDATE selected_option=VALUES(selected_option)",
+            "INSERT INTO scenario_responses (user_id, scenario_id, selected_option) VALUES (%s, %s, %s) ON CONFLICT (user_id, scenario_id) DO UPDATE SET selected_option=EXCLUDED.selected_option",
             (user_id, scenario["scenario_id"], response["selected_option"]),
         )
 

@@ -608,8 +608,8 @@ async def add_user(data: UserProfileInput):
     personality = data.personality.model_dump()
     roommate_type = classify_user_type(preferences, personality)
     execute_update("UPDATE users SET age=%s, profession=%s, gender=%s, roommate_type=%s WHERE id=%s", (data.age, data.profession, data.gender, roommate_type, data.user_id))
-    execute_insert("INSERT INTO preferences (user_id, sleep, cleanliness, noise, smoking, guests, social, cooking) VALUES (%s,%s,%s,%s,%s,%s,%s,%s) ON DUPLICATE KEY UPDATE sleep=VALUES(sleep), cleanliness=VALUES(cleanliness), noise=VALUES(noise), smoking=VALUES(smoking), guests=VALUES(guests), social=VALUES(social), cooking=VALUES(cooking)", (data.user_id, preferences["sleep"], preferences["cleanliness"], preferences["noise"], preferences["smoking"], preferences["guests"], preferences["social"], preferences["cooking"]))
-    execute_insert("INSERT INTO personality (user_id, introvert_extrovert, conflict_style, routine_level, sharing_level) VALUES (%s,%s,%s,%s,%s) ON DUPLICATE KEY UPDATE introvert_extrovert=VALUES(introvert_extrovert), conflict_style=VALUES(conflict_style), routine_level=VALUES(routine_level), sharing_level=VALUES(sharing_level)", (data.user_id, personality["introvert_extrovert"], personality["conflict_style"], personality["routine_level"], personality["sharing_level"]))
+    execute_insert("INSERT INTO preferences (user_id, sleep, cleanliness, noise, smoking, guests, social, cooking) VALUES (%s,%s,%s,%s,%s,%s,%s,%s) ON CONFLICT (user_id) DO UPDATE SET sleep=EXCLUDED.sleep, cleanliness=EXCLUDED.cleanliness, noise=EXCLUDED.noise, smoking=EXCLUDED.smoking, guests=EXCLUDED.guests, social=EXCLUDED.social, cooking=EXCLUDED.cooking", (data.user_id, preferences["sleep"], preferences["cleanliness"], preferences["noise"], preferences["smoking"], preferences["guests"], preferences["social"], preferences["cooking"]))
+    execute_insert("INSERT INTO personality (user_id, introvert_extrovert, conflict_style, routine_level, sharing_level) VALUES (%s,%s,%s,%s,%s) ON CONFLICT (user_id) DO UPDATE SET introvert_extrovert=EXCLUDED.introvert_extrovert, conflict_style=EXCLUDED.conflict_style, routine_level=EXCLUDED.routine_level, sharing_level=EXCLUDED.sharing_level", (data.user_id, personality["introvert_extrovert"], personality["conflict_style"], personality["routine_level"], personality["sharing_level"]))
     
     # Mark user as having completed profile
     execute_update("UPDATE users SET has_profile=TRUE WHERE id=%s", (data.user_id,))
@@ -632,8 +632,8 @@ async def add_user_scenarios(data: ScenarioProfileInput):
     personality = derive_personality(traits)
     roommate_type = classify_user_type(preferences, personality, traits)
     execute_update("UPDATE users SET age=%s, profession=%s, gender=%s, roommate_type=%s WHERE id=%s", (data.age, data.profession, data.gender, roommate_type, data.user_id))
-    execute_insert("INSERT INTO preferences (user_id, sleep, cleanliness, noise, smoking, guests, social, cooking) VALUES (%s,%s,%s,%s,%s,%s,%s,%s) ON DUPLICATE KEY UPDATE sleep=VALUES(sleep), cleanliness=VALUES(cleanliness), noise=VALUES(noise), smoking=VALUES(smoking), guests=VALUES(guests), social=VALUES(social), cooking=VALUES(cooking)", (data.user_id, preferences["sleep"], preferences["cleanliness"], preferences["noise"], preferences["smoking"], preferences["guests"], preferences["social"], preferences["cooking"]))
-    execute_insert("INSERT INTO personality (user_id, introvert_extrovert, conflict_style, routine_level, sharing_level) VALUES (%s,%s,%s,%s,%s) ON DUPLICATE KEY UPDATE introvert_extrovert=VALUES(introvert_extrovert), conflict_style=VALUES(conflict_style), routine_level=VALUES(routine_level), sharing_level=VALUES(sharing_level)", (data.user_id, personality["introvert_extrovert"], personality["conflict_style"], personality["routine_level"], personality["sharing_level"]))
+    execute_insert("INSERT INTO preferences (user_id, sleep, cleanliness, noise, smoking, guests, social, cooking) VALUES (%s,%s,%s,%s,%s,%s,%s,%s) ON CONFLICT (user_id) DO UPDATE SET sleep=EXCLUDED.sleep, cleanliness=EXCLUDED.cleanliness, noise=EXCLUDED.noise, smoking=EXCLUDED.smoking, guests=EXCLUDED.guests, social=EXCLUDED.social, cooking=EXCLUDED.cooking", (data.user_id, preferences["sleep"], preferences["cleanliness"], preferences["noise"], preferences["smoking"], preferences["guests"], preferences["social"], preferences["cooking"]))
+    execute_insert("INSERT INTO personality (user_id, introvert_extrovert, conflict_style, routine_level, sharing_level) VALUES (%s,%s,%s,%s,%s) ON CONFLICT (user_id) DO UPDATE SET introvert_extrovert=EXCLUDED.introvert_extrovert, conflict_style=EXCLUDED.conflict_style, routine_level=EXCLUDED.routine_level, sharing_level=EXCLUDED.sharing_level", (data.user_id, personality["introvert_extrovert"], personality["conflict_style"], personality["routine_level"], personality["sharing_level"]))
     save_traits(data.user_id, traits)
     save_scenario_responses(data.user_id, responses)
     
@@ -1128,7 +1128,7 @@ async def admin_get_weights(admin=Depends(_require_admin)):
 async def admin_update_weights(data: WeightsUpdateInput, admin=Depends(_require_admin)):
     from match_cache import recompute_all_matches
     for feature, value in data.model_dump().items():
-        execute_insert("INSERT INTO weights (feature, value) VALUES (%s, %s) ON DUPLICATE KEY UPDATE value=VALUES(value)", (feature, value))
+        execute_insert("INSERT INTO weights (feature, value) VALUES (%s, %s) ON CONFLICT (feature) DO UPDATE SET value=EXCLUDED.value", (feature, value))
     
     # Recompute all matches when weights are updated
     try:
