@@ -463,6 +463,9 @@ def _get_user_data(user_id: int):
     if not preferences or not personality:
         raise HTTPException(status_code=400, detail=f"User {user_id} has not completed their profile")
     traits = get_user_traits(user_id)
+    # Ensure traits is always a dict, even if None (use default values)
+    if traits is None:
+        traits = {"cleanliness_tolerance": 3, "noise_tolerance": 3, "social_tolerance": 3, "conflict_style": 3, "flexibility": 3}
     return user, preferences, personality, traits
 
 
@@ -780,67 +783,78 @@ async def get_matches(user_id: int):
 
 @app.post("/compatibility")
 async def check_compatibility(data: CompatibilityRequest):
-    if data.user1_id == data.user2_id:
-        raise HTTPException(status_code=400, detail="Cannot compare a user with themselves")
-    
-    # Check cache first
-    cached = get_match_score(data.user1_id, data.user2_id)
-    if cached:
-        import json
-        highlights = json.loads(cached["highlights_json"]) if cached["highlights_json"] else []
-        warnings = json.loads(cached["warnings_json"]) if cached["warnings_json"] else []
-        conflicts = json.loads(cached["conflicts_json"]) if cached["conflicts_json"] else []
-        recommendation = generate_recommendation(cached["compatibility_score"], cached["risk_level"])
-        
-        user1, _, _, _ = _get_user_data(data.user1_id)
-        user2, _, _, _ = _get_user_data(data.user2_id)
-        
-        return {
-            "match": round(cached["compatibility_score"]),
-            "breakdown": {
-                "lifestyle": cached["lifestyle_score"],
-                "personality": cached["personality_score"],
-                "traits": cached["trait_score"]
-            },
-            "risk": cached["risk_level"],
-            "total_score": cached["compatibility_score"],
-            "lifestyle_score": cached["lifestyle_score"],
-            "personality_score": cached["personality_score"],
-            "trait_score": cached["trait_score"],
-            "risk_level": cached["risk_level"],
-            "conflicts": conflicts,
-            "recommendation": recommendation,
-            "highlights": highlights,
-            "warnings": warnings,
-            "user1_name": user1["name"],
-            "user2_name": user2["name"],
-            "user1_type": user1.get("roommate_type"),
-            "user2_type": user2.get("roommate_type"),
-            "cached": True
-        }
-    
-    # Calculate if not in cache
-    user1, preferences1, personality1, traits1 = _get_user_data(data.user1_id)
-    user2, preferences2, personality2, traits2 = _get_user_data(data.user2_id)
-    result = calculate_compatibility(preferences1, preferences2, personality1, personality2, user1.get("cluster_id"), user2.get("cluster_id"), traits1, traits2)
-    risk_info = detect_risks(preferences1, preferences2, personality1, personality2, traits1, traits2)
-    recommendation = generate_recommendation(result["total_score"], risk_info["risk_level"])
-    _log_match("user", data.user1_id, "user", data.user2_id, result["total_score"], risk_info["risk_level"], risk_info["conflicts"])
-    
-    # Cache the result
-    save_match_score(
-        data.user1_id, data.user2_id,
-        result["total_score"],
-        result["lifestyle_score"],
-        result["personality_score"],
-        result["trait_score"],
-        risk_info["risk_level"],
-        result["highlights"][:3],
-        result["warnings"][:2],
-        risk_info["conflicts"]
-    )
-    
-    return {"match": round(result["total_score"]), "breakdown": {"lifestyle": result["lifestyle_score"], "personality": result["personality_score"], "traits": result["trait_score"]}, "risk": risk_info["risk_level"], **result, "risk_level": risk_info["risk_level"], "conflicts": risk_info["conflicts"], "recommendation": recommendation, "user1_name": user1["name"], "user2_name": user2["name"], "user1_type": user1.get("roommate_type"), "user2_type": user2.get("roommate_type"), "cached": False}
+    try:
+        if data.user1_id == data.user2_id:
+            raise HTTPException(status_code=400, detail="Cannot compare a user with themselves")
+
+        # Check cache first
+        cached = get_match_score(data.user1_id, data.user2_id)
+        if cached:
+            import json
+            try:
+                highlights = json.loads(cached["highlights_json"]) if cached["highlights_json"] else []
+                warnings = json.loads(cached["warnings_json"]) if cached["warnings_json"] else []
+                conflicts = json.loads(cached["conflicts_json"]) if cached["conflicts_json"] else []
+            except json.JSONDecodeError:
+                highlights = []
+                warnings = []
+                conflicts = []
+            recommendation = generate_recommendation(cached["compatibility_score"], cached["risk_level"])
+
+            user1, _, _, _ = _get_user_data(data.user1_id)
+            user2, _, _, _ = _get_user_data(data.user2_id)
+
+            return {
+                "match": round(cached["compatibility_score"]),
+                "breakdown": {
+                    "lifestyle": cached["lifestyle_score"],
+                    "personality": cached["personality_score"],
+                    "traits": cached["trait_score"]
+                },
+                "risk": cached["risk_level"],
+                "total_score": cached["compatibility_score"],
+                "lifestyle_score": cached["lifestyle_score"],
+                "personality_score": cached["personality_score"],
+                "trait_score": cached["trait_score"],
+                "risk_level": cached["risk_level"],
+                "conflicts": conflicts,
+                "recommendation": recommendation,
+                "highlights": highlights,
+                "warnings": warnings,
+                "user1_name": user1["name"],
+                "user2_name": user2["name"],
+                "user1_type": user1.get("roommate_type"),
+                "user2_type": user2.get("roommate_type"),
+                "cached": True
+            }
+
+        # Calculate if not in cache
+        user1, preferences1, personality1, traits1 = _get_user_data(data.user1_id)
+        user2, preferences2, personality2, traits2 = _get_user_data(data.user2_id)
+        result = calculate_compatibility(preferences1, preferences2, personality1, personality2, user1.get("cluster_id"), user2.get("cluster_id"), traits1, traits2)
+        risk_info = detect_risks(preferences1, preferences2, personality1, personality2, traits1, traits2)
+        recommendation = generate_recommendation(result["total_score"], risk_info["risk_level"])
+        _log_match("user", data.user1_id, "user", data.user2_id, result["total_score"], risk_info["risk_level"], risk_info["conflicts"])
+
+        # Cache the result
+        save_match_score(
+            data.user1_id, data.user2_id,
+            result["total_score"],
+            result["lifestyle_score"],
+            result["personality_score"],
+            result["trait_score"],
+            risk_info["risk_level"],
+            result["highlights"][:3],
+            result["warnings"][:2],
+            risk_info["conflicts"]
+        )
+
+        return {"match": round(result["total_score"]), "breakdown": {"lifestyle": result["lifestyle_score"], "personality": result["personality_score"], "traits": result["trait_score"]}, "risk": risk_info["risk_level"], **result, "risk_level": risk_info["risk_level"], "conflicts": risk_info["conflicts"], "recommendation": recommendation, "user1_name": user1["name"], "user2_name": user2["name"], "user1_type": user1.get("roommate_type"), "user2_type": user2.get("roommate_type"), "cached": False}
+    except HTTPException:
+        raise
+    except Exception as e:
+        print(f"[Compatibility Error] {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Compatibility calculation failed: {str(e)}")
 
 
 @app.post("/room-post")
