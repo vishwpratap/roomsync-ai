@@ -78,16 +78,27 @@ async def init_db():
 
 @app.post("/cleanup-duplicate-posts")
 async def cleanup_duplicate_posts():
-    """Delete duplicate room posts (keep only the oldest one per user/title/location/rent)"""
+    """Delete duplicate room posts (keep only the oldest one per user/title)"""
     try:
-        # Find and delete duplicate posts
+        # First, delete duplicate room_images
+        execute_query(
+            """
+            DELETE FROM room_images
+            WHERE id NOT IN (
+                SELECT MIN(id)
+                FROM room_images
+                GROUP BY post_id, image_url
+            )
+            """
+        )
+        # Then delete duplicate posts by user_id and title (most common duplicates)
         duplicates = execute_query(
             """
             DELETE FROM room_posts
             WHERE id NOT IN (
                 SELECT MIN(id)
                 FROM room_posts
-                GROUP BY user_id, title, location, rent
+                GROUP BY user_id, title
             )
             RETURNING id
             """,
@@ -97,6 +108,18 @@ async def cleanup_duplicate_posts():
         return {"message": f"Deleted {deleted_count} duplicate room posts", "deleted_ids": [d["id"] for d in duplicates]}
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to cleanup duplicates: {str(e)}")
+
+
+@app.get("/debug-uploads")
+async def debug_uploads():
+    """Debug endpoint to check uploads directory"""
+    try:
+        if not os.path.exists(UPLOADS_DIR):
+            return {"exists": False, "path": UPLOADS_DIR, "files": []}
+        files = os.listdir(UPLOADS_DIR)
+        return {"exists": True, "path": UPLOADS_DIR, "file_count": len(files), "files": files[:20]}
+    except Exception as e:
+        return {"error": str(e)}
 
 
 @app.post("/cleanup-incomplete-profiles")
