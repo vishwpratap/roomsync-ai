@@ -175,6 +175,9 @@ const Admin = {
             <div style="margin-top:20px; padding-top:20px; border-top:1px solid rgba(255,255,255,0.1);">
                 <button class="btn btn-danger btn-sm" onclick="Admin.cleanupDuplicatePosts()">🗑️ Cleanup Duplicate Room Posts</button>
                 <small class="muted">Removes duplicate room posts from database (keeps oldest one per user/title/location/rent)</small>
+                <br><br>
+                <button class="btn btn-danger btn-sm" onclick="Admin.cleanupAllDuplicates()">🔥 Strong Cleanup (By Title)</button>
+                <small class="muted">Removes ALL posts with same title, keeps only the oldest one</small>
             </div>`;
         } catch (err) {
             target.innerHTML = `<p>${err.message}</p>`;
@@ -185,6 +188,18 @@ const Admin = {
         if (!confirm("This will delete duplicate room posts from the database. Are you sure?")) return;
         try {
             const result = await fetch("https://roomsync-ai.onrender.com/cleanup-duplicate-posts", { method: "POST" });
+            const data = await result.json();
+            alert(data.message);
+            this.loadMetrics();
+        } catch (err) {
+            alert("Failed to cleanup: " + err.message);
+        }
+    },
+
+    async cleanupAllDuplicates() {
+        if (!confirm("This will delete ALL posts with the same title, keeping only the oldest one. Are you sure?")) return;
+        try {
+            const result = await fetch("https://roomsync-ai.onrender.com/cleanup-all-duplicates", { method: "POST" });
             const data = await result.json();
             alert(data.message);
             this.loadMetrics();
