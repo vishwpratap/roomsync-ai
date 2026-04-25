@@ -56,7 +56,7 @@ const Utils = {
     },
 
     getTheme() {
-        return localStorage.getItem("roomsync_theme") || "default";
+        return localStorage.getItem("roomsync_theme") || "pink-blue";
     },
 
     setTheme(theme) {
