@@ -50,19 +50,22 @@ const Dashboard = {
                 <div class="dash-section">
                     <h3>⚖️ Compare Any Two Users</h3>
                     <div class="compare-section glass-card">
-                    <div class="compare-inputs">
-                        <div class="compare-field">
-                            <label>User 1 (You)</label>
-                            <input type="text" value="${s?.name || ''}" disabled class="compare-input"/>
+                        <div class="compare-inputs">
+                            <div class="compare-field">
+                                <label>User 1 (You)</label>
+                                <input type="text" value="${s?.name || ''}" disabled class="compare-input"/>
+                            </div>
+                            <div class="compare-vs">VS</div>
+                            <div class="compare-field">
+                                <label>User 2</label>
+                                <input type="text" id="compare-user2" placeholder="Search for a user..." oninput="Dashboard.compareSearch(this.value)"/>
+                                <div class="compare-dropdown" id="compare-dropdown"></div>
+                            </div>
                         </div>
-                        <div class="compare-vs">VS</div>
-                        <div class="compare-field">
-                            <label>User 2</label>
-                            <input type="text" id="compare-user2" placeholder="Search for a user..." oninput="Dashboard.compareSearch(this.value)"/>
-                            <div class="compare-dropdown" id="compare-dropdown"></div>
+                        <div class="compare-actions">
+                            <button class="btn btn-primary btn-sm" id="compare-btn" onclick="Dashboard.compareUsers()" disabled>Compare Compatibility</button>
                         </div>
                     </div>
-                    <button class="btn btn-primary btn-sm" id="compare-btn" onclick="Dashboard.compareUsers()" disabled>Compare Compatibility</button>
                 </div>
             </div>
         </div>`;

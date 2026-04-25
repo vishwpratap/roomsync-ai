@@ -173,15 +173,19 @@ const Admin = {
                 <div class="stat-card"><strong>${data.analytics.high_risk_matches_percent}%</strong><span>High-risk share</span></div>
             </div>
             <div class="muted">Top conflict types: ${(data.analytics.most_common_conflict_types || []).map(item => `${item.type} (${item.count})`).join(", ") || 'No data yet'}</div>
-            <div style="margin-top:20px; padding-top:20px; border-top:1px solid rgba(255,255,255,0.1);">
-                <button class="btn btn-danger btn-sm" onclick="Admin.cleanupDuplicatePosts()">🗑️ Cleanup Duplicate Room Posts</button>
-                <small class="muted">Removes duplicate room posts from database (keeps oldest one per user/title/location/rent)</small>
-                <br><br>
-                <button class="btn btn-danger btn-sm" onclick="Admin.cleanupAllDuplicates()">🔥 Strong Cleanup (By Title)</button>
-                <small class="muted">Removes ALL posts with same title, keeps only the oldest one</small>
-                <br><br>
-                <button class="btn btn-warning btn-sm" onclick="Admin.seedScenarios()">🌱 Re-seed Scenarios</button>
-                <small class="muted">Re-seeds all scenarios with options (use if questionnaire shows no options)</small>
+            <div class="admin-actions-section">
+                <div class="admin-action-item">
+                    <button class="btn btn-danger btn-sm" onclick="Admin.cleanupDuplicatePosts()">🗑️ Cleanup Duplicate Room Posts</button>
+                    <small class="muted">Removes duplicate room posts from database (keeps oldest one per user/title/location/rent)</small>
+                </div>
+                <div class="admin-action-item">
+                    <button class="btn btn-danger btn-sm" onclick="Admin.cleanupAllDuplicates()">🔥 Strong Cleanup (By Title)</button>
+                    <small class="muted">Removes ALL posts with same title, keeps only the oldest one</small>
+                </div>
+                <div class="admin-action-item">
+                    <button class="btn btn-warning btn-sm" onclick="Admin.seedScenarios()">🌱 Re-seed Scenarios</button>
+                    <small class="muted">Re-seeds all scenarios with options (use if questionnaire shows no options)</small>
+                </div>
             </div>`;
         } catch (err) {
             target.innerHTML = `<p>${err.message}</p>`;
@@ -222,12 +226,12 @@ const Admin = {
                 <h3>Room Posts Management</h3>
                 <small class="muted">${posts.length} total posts</small>
             </div>
-            <div style="max-height:400px; overflow-y:auto;">
+            <div class="admin-scroll-container">
                 ${posts.map(post => `
-                    <div class="admin-item" style="padding:12px; border-bottom:1px solid rgba(255,255,255,0.1); display:flex; justify-content:space-between; align-items:center;">
-                        <div>
+                    <div class="admin-item admin-post-item">
+                        <div class="admin-post-info">
                             <strong>${post.title}</strong>
-                            <br><small class="muted">ID: ${post.id} | Owner: ${post.owner_name} | ₹${post.rent} | ${post.location}</small>
+                            <small class="muted">ID: ${post.id} | Owner: ${post.owner_name} | ₹${post.rent} | ${post.location}</small>
                         </div>
                         <button class="btn btn-danger btn-xs" onclick="Admin.deleteRoomPost(${post.id})">Delete</button>
                     </div>

@@ -92,15 +92,13 @@ const Rooms = {
                     <span>${post.gender_preference || "Any"} preference</span>
                     <span>${post.created_at ? "Recently posted" : "Available now"}</span>
                 </div>
-                ${isOwnPost ? `
-                <div class="room-actions" style="display:flex; gap:8px; margin-top:12px;">
+                <div class="room-actions">
+                    ${isOwnPost ? `
                     <button class="btn btn-secondary btn-xs" onclick="Rooms.renderEdit(${post.id})">Edit</button>
                     <button class="btn btn-danger btn-xs" onclick="Rooms.deletePost(${post.id})">Delete</button>
+                    ` : ''}
+                    <button class="btn btn-primary btn-sm" onclick="Rooms.renderDetail(${post.id})">View Post</button>
                 </div>
-                <button class="btn btn-primary btn-sm btn-full" onclick="Rooms.renderDetail(${post.id})">View Post</button>
-                ` : `
-                <button class="btn btn-primary btn-sm btn-full" onclick="Rooms.renderDetail(${post.id})">View Post</button>
-                `}
             </div>
         </div>`;
     },
