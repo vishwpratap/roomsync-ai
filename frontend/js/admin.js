@@ -509,6 +509,7 @@ const Admin = {
             target.innerHTML = `
             <div class="admin-section-header">
                 <h3>📝 Scenario Management</h3>
+                <button class="admin-action-btn" onclick="Admin.newScenario()">+ New Scenario</button>
             </div>
             <div class="admin-table-container">
                 <table class="admin-table">
