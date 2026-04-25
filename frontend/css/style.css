@@ -74,6 +74,84 @@
     background: radial-gradient(circle at top right, rgba(255, 107, 157, 0.2) 0%, transparent 60%);
 }
 
+[data-theme="pink-blue"] input[type="text"],
+[data-theme="pink-blue"] input[type="password"],
+[data-theme="pink-blue"] input[type="number"],
+[data-theme="pink-blue"] select {
+    background: rgba(45, 27, 46, 0.3);
+    border-color: rgba(255, 105, 157, 0.3);
+}
+
+[data-theme="pink-blue"] input:focus,
+[data-theme="pink-blue"] select:focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px rgba(255, 107, 157, 0.2), 0 0 20px rgba(255, 107, 157, 0.15);
+    background: rgba(45, 27, 46, 0.4);
+}
+
+[data-theme="pink-blue"] select option {
+    background: #2d1b2e;
+    color: var(--text-primary);
+}
+
+[data-theme="pink-blue"] .theme-selector,
+[data-theme="pink-blue"] .admin-theme-selector {
+    background: rgba(45, 27, 46, 0.4);
+    border-color: rgba(255, 105, 157, 0.3);
+}
+
+[data-theme="pink-blue"] .theme-selector:hover,
+[data-theme="pink-blue"] .admin-theme-selector:hover {
+    border-color: var(--accent);
+}
+
+[data-theme="pink-blue"] .theme-selector:focus,
+[data-theme="pink-blue"] .admin-theme-selector:focus {
+    outline: none;
+    border-color: var(--accent);
+    box-shadow: 0 0 0 2px rgba(255, 107, 157, 0.3);
+}
+
+[data-theme="pink-blue"] h1,
+[data-theme="pink-blue"] h2,
+[data-theme="pink-blue"] h3,
+[data-theme="pink-blue"] h4 {
+    color: var(--text-primary);
+}
+
+[data-theme="pink-blue"] .subtitle,
+[data-theme="pink-blue"] .dash-subtitle,
+[data-theme="pink-blue"] .q-header p {
+    color: var(--text-secondary);
+}
+
+[data-theme="pink-blue"] .dash-section h3 {
+    border-bottom-color: rgba(255, 107, 157, 0.3);
+}
+
+[data-theme="pink-blue"] .dash-section h3:hover {
+    border-bottom-color: rgba(255, 107, 157, 0.5);
+}
+
+[data-theme="pink-blue"] .sidebar-item:hover {
+    background: rgba(255, 107, 157, 0.15);
+}
+
+[data-theme="pink-blue"] .sidebar-item.active {
+    background: var(--gradient-main);
+    box-shadow: 0 4px 15px rgba(255, 107, 157, 0.3);
+}
+
+[data-theme="pink-blue"] .scenario-option.selected {
+    background: rgba(255, 107, 157, 0.2);
+    border-color: var(--accent);
+    box-shadow: 0 0 20px rgba(255, 107, 157, 0.2);
+}
+
+[data-theme="pink-blue"] .match-meta span {
+    background: rgba(45, 27, 46, 0.2);
+}
+
 /* ── Reset & Base ────────────────────────── */
 *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
 html { font-size: 16px; scroll-behavior: smooth; }
