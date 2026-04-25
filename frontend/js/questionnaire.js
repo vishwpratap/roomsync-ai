@@ -118,19 +118,23 @@ const Questionnaire = {
         console.log("[Questionnaire] Scenario options:", scenario.options);
 
         const selected = this.responses[scenario.id];
+        const icon = scenario.icon || "🎭";
+        const title = scenario.title || "Scenario";
+        const description = scenario.description || "";
+
         body.innerHTML = `
         <div class="step-content scenario-step fade-in">
             <div class="scenario-header">
-                <span class="scenario-icon">${scenario.icon}</span>
-                <h3>${scenario.title}</h3>
-                <p class="scenario-desc">${scenario.description}</p>
+                <span class="scenario-icon">${icon}</span>
+                <h3>${title}</h3>
+                <p class="scenario-desc">${description}</p>
             </div>
             <div class="scenario-options">
                 ${scenario.options && scenario.options.length > 0 ? scenario.options.map((opt, i) => `
                     <div class="scenario-option ${selected === i ? 'selected' : ''}"
                          onclick="Questionnaire.selectOption('${scenario.id}', ${i})" id="opt-${scenario.id}-${i}">
-                        <span class="option-emoji">${opt.emoji}</span>
-                        <span class="option-text">${opt.text}</span>
+                        <span class="option-emoji">${opt.emoji || "📝"}</span>
+                        <span class="option-text">${opt.text || "Option"}</span>
                         <span class="option-check">${selected === i ? '✓' : ''}</span>
                     </div>
                 `).join("") : '<p class="muted">No options available for this scenario.</p>'}
