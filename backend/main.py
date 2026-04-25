@@ -574,7 +574,7 @@ async def signup(data: UserSignup):
     if existing:
         raise HTTPException(status_code=400, detail="Username already exists")
     password_hash = bcrypt.hashpw(data.password.encode("utf-8"), bcrypt.gensalt()).decode("utf-8")
-    user_id = execute_insert("INSERT INTO users (name, password_hash) VALUES (%s, %s)", (data.name, password_hash))
+    user_id = execute_insert("INSERT INTO users (name, password_hash) VALUES (%s, %s) RETURNING id", (data.name, password_hash))
     return {"message": "Account created successfully", "user_id": user_id, "name": data.name}
 
 
@@ -905,11 +905,11 @@ async def create_room_post(
         image_urls = _save_uploaded_images(images)
         primary_image = image_urls[0] if image_urls else None
         post_id = execute_insert(
-            "INSERT INTO room_posts (user_id, title, description, rent, location, gender_preference, lifestyle_preference, personality_preference, image_url) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)",
+            "INSERT INTO room_posts (user_id, title, description, rent, location, gender_preference, lifestyle_preference, personality_preference, image_url) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s) RETURNING id",
             (user_id, title, description, rent, location, gender_preference, json.dumps({}), json.dumps({}), primary_image),
         )
         for image_url in image_urls:
-            execute_insert("INSERT INTO room_images (post_id, image_url) VALUES (%s, %s)", (post_id, image_url))
+            execute_insert("INSERT INTO room_images (post_id, image_url) VALUES (%s, %s) RETURNING id", (post_id, image_url))
         row = execute_query("SELECT rp.*, u.name AS owner_name, u.roommate_type AS owner_roommate_type FROM room_posts rp JOIN users u ON u.id = rp.user_id WHERE rp.id=%s", (post_id,), fetch_one=True)
         return {"message": "Room post created successfully", "post": _serialize_room_post(row)}
     except HTTPException:
@@ -1124,7 +1124,7 @@ async def update_room_post(
     if image_urls:
         execute_update("DELETE FROM room_images WHERE post_id=%s", (post_id,))
         for image_url in image_urls:
-            execute_insert("INSERT INTO room_images (post_id, image_url) VALUES (%s, %s)", (post_id, image_url))
+            execute_insert("INSERT INTO room_images (post_id, image_url) VALUES (%s, %s) RETURNING id", (post_id, image_url))
     
     row = execute_query("SELECT rp.*, u.name AS owner_name, u.roommate_type AS owner_roommate_type FROM room_posts rp JOIN users u ON u.id = rp.user_id WHERE rp.id=%s", (post_id,), fetch_one=True)
     return {"message": "Room post updated successfully", "post": _serialize_room_post(row)}

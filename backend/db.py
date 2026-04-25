@@ -72,6 +72,10 @@ def execute_insert(query, params=None):
     try:
         cursor.execute(query, params or ())
         conn.commit()
+        # For PostgreSQL, check if query has RETURNING clause
+        if "RETURNING" in query.upper():
+            result = cursor.fetchone()
+            return result[0] if result else cursor.lastrowid
         return cursor.lastrowid
     finally:
         cursor.close()
