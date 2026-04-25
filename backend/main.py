@@ -1145,34 +1145,40 @@ async def my_room_posts(user_id: int):
 
 @app.post("/room-post/{post_id}/request")
 async def request_roommate(post_id: int, data: RoommateRequestInput):
-    post = execute_query("SELECT id, user_id FROM room_posts WHERE id=%s", (post_id,), fetch_one=True)
-    if not post:
-        raise HTTPException(status_code=404, detail="Room post not found")
-    if post["user_id"] == data.requester_user_id:
-        raise HTTPException(status_code=400, detail="You cannot request your own room post")
-    
-    # Check if conversation already exists
-    existing_conv = execute_query(
-        "SELECT id FROM conversations WHERE user1_id=%s AND user2_id=%s AND post_id=%s",
-        (data.requester_user_id, post["user_id"], post_id),
-        fetch_one=True
-    )
-    if existing_conv:
-        conversation_id = existing_conv["id"]
-    else:
-        conversation_id = execute_insert(
-            "INSERT INTO conversations (user1_id, user2_id, post_id) VALUES (%s, %s, %s)",
-            (data.requester_user_id, post["user_id"], post_id)
+    try:
+        post = execute_query("SELECT id, user_id FROM room_posts WHERE id=%s", (post_id,), fetch_one=True)
+        if not post:
+            raise HTTPException(status_code=404, detail="Room post not found")
+        if post["user_id"] == data.requester_user_id:
+            raise HTTPException(status_code=400, detail="You cannot request your own room post")
+
+        # Check if conversation already exists
+        existing_conv = execute_query(
+            "SELECT id FROM conversations WHERE user1_id=%s AND user2_id=%s AND post_id=%s",
+            (data.requester_user_id, post["user_id"], post_id),
+            fetch_one=True
         )
-    
-    # Add initial message if provided
-    if data.message:
-        execute_insert(
-            "INSERT INTO messages (conversation_id, sender_id, message_content) VALUES (%s, %s, %s)",
-            (conversation_id, data.requester_user_id, data.message)
-        )
-    
-    return {"message": "Roommate request sent", "request_id": conversation_id}
+        if existing_conv:
+            conversation_id = existing_conv["id"]
+        else:
+            conversation_id = execute_insert(
+                "INSERT INTO conversations (user1_id, user2_id, post_id) VALUES (%s, %s, %s) RETURNING id",
+                (data.requester_user_id, post["user_id"], post_id)
+            )
+
+        # Add initial message if provided
+        if data.message:
+            execute_insert(
+                "INSERT INTO messages (conversation_id, sender_id, message_content) VALUES (%s, %s, %s) RETURNING id",
+                (conversation_id, data.requester_user_id, data.message)
+            )
+
+        return {"message": "Roommate request sent successfully", "conversation_id": conversation_id}
+    except HTTPException:
+        raise
+    except Exception as e:
+        print(f"[Roommate Request Error] {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Failed to send roommate request: {str(e)}")
 
 
 @app.get("/conversations/{user_id}")
