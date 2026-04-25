@@ -791,6 +791,26 @@ async def debug_scenarios():
         return {"error": str(e)}
 
 
+@app.post("/admin/seed-scenarios")
+async def admin_seed_scenarios():
+    """Admin endpoint to re-seed scenarios with options"""
+    try:
+        # Delete existing scenarios and options
+        execute_query("DELETE FROM scenario_options")
+        execute_query("DELETE FROM scenarios")
+        print("[Seed Scenarios] Cleared existing scenarios and options")
+
+        # Re-seed with default scenarios
+        from scenarios import seed_default_scenarios
+        seed_default_scenarios()
+        print("[Seed Scenarios] Re-seeded default scenarios")
+
+        return {"message": "Scenarios re-seeded successfully"}
+    except Exception as e:
+        print(f"[Seed Scenarios] Error: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Failed to seed scenarios: {str(e)}")
+
+
 @app.post("/add-user")
 async def add_user(data: UserProfileInput):
     user = execute_query("SELECT id FROM users WHERE id=%s", (data.user_id,), fetch_one=True)

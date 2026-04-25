@@ -179,6 +179,9 @@ const Admin = {
                 <br><br>
                 <button class="btn btn-danger btn-sm" onclick="Admin.cleanupAllDuplicates()">🔥 Strong Cleanup (By Title)</button>
                 <small class="muted">Removes ALL posts with same title, keeps only the oldest one</small>
+                <br><br>
+                <button class="btn btn-warning btn-sm" onclick="Admin.seedScenarios()">🌱 Re-seed Scenarios</button>
+                <small class="muted">Re-seeds all scenarios with options (use if questionnaire shows no options)</small>
             </div>`;
         } catch (err) {
             target.innerHTML = `<p>${err.message}</p>`;
@@ -245,6 +248,18 @@ const Admin = {
             this.loadMetrics();
         } catch (err) {
             alert("Failed to delete post: " + err.message);
+        }
+    },
+
+    async seedScenarios() {
+        if (!confirm("This will delete all existing scenarios and re-seed them with options. Are you sure?")) return;
+        try {
+            const result = await fetch("https://roomsync-ai.onrender.com/admin/seed-scenarios", { method: "POST" });
+            const data = await result.json();
+            alert(data.message);
+            this.loadMetrics();
+        } catch (err) {
+            alert("Failed to seed scenarios: " + err.message);
         }
     },
 
