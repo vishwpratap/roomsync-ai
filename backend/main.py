@@ -819,6 +819,19 @@ async def admin_seed_scenarios():
         raise HTTPException(status_code=500, detail=f"Failed to seed scenarios: {str(e)}")
 
 
+@app.post("/admin/seed-demo-scenarios")
+async def admin_seed_demo_scenarios():
+    """Admin endpoint to force insert 4 demo scenarios"""
+    try:
+        from scenarios import force_seed_demo_scenarios
+        result = force_seed_demo_scenarios()
+        print("[Seed Demo Scenarios] Demo scenarios seeded")
+        return result
+    except Exception as e:
+        print(f"[Seed Demo Scenarios] Error: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Failed to seed demo scenarios: {str(e)}")
+
+
 @app.post("/add-user")
 async def add_user(data: UserProfileInput):
     user = execute_query("SELECT id FROM users WHERE id=%s", (data.user_id,), fetch_one=True)
