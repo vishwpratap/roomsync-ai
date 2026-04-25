@@ -37,9 +37,9 @@
     --bg-card: #ffb6c1;
     --bg-card-hover: #ffc0cb;
     --glass-border: rgba(255, 105, 157, 0.4);
-    --text-primary: #4a1a2e;
-    --text-secondary: #8b3a62;
-    --text-muted: #a85a7a;
+    --text-primary: #2d1b2e;
+    --text-secondary: #5c2a4a;
+    --text-muted: #7a3a5a;
     --accent: #ff6b9d;
     --accent-2: #4fc3f7;
     --accent-3: #ff4081;
@@ -64,6 +64,14 @@
 [data-theme="pink-blue"] .glass-card:hover {
     box-shadow: var(--shadow), var(--shadow-glow), 0 0 50px rgba(255, 107, 157, 0.35);
     border-color: rgba(255, 107, 157, 0.6);
+}
+
+[data-theme="pink-blue"] .match-card {
+    background: linear-gradient(135deg, rgba(255, 182, 193, 0.8) 0%, rgba(255, 192, 203, 0.7) 100%);
+}
+
+[data-theme="pink-blue"] .match-card::after {
+    background: radial-gradient(circle at top right, rgba(255, 107, 157, 0.2) 0%, transparent 60%);
 }
 
 /* ── Reset & Base ────────────────────────── */
