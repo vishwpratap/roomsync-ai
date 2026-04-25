@@ -184,29 +184,39 @@ def force_seed_demo_scenarios():
     ]
     
     for scenario in demo_scenarios:
+        print(f"[Force Seed] Processing scenario: {scenario['slug']}")
         # Check if scenario already exists by slug
         existing = execute_query("SELECT id FROM scenarios WHERE slug=%s", (scenario["slug"],), fetch_one=True)
         if existing:
             # Update existing scenario
             scenario_id = existing["id"]
+            print(f"[Force Seed] Updating existing scenario with ID: {scenario_id}")
             execute_update(
                 "UPDATE scenarios SET title=%s, question=%s, description=%s, icon=%s, category=%s WHERE id=%s",
                 (scenario["title"], scenario["question"], scenario.get("description"), scenario.get("icon"), scenario.get("category"), scenario_id),
             )
             execute_update("DELETE FROM scenario_options WHERE scenario_id=%s", (scenario_id,))
+            print(f"[Force Seed] Deleted old options for scenario ID: {scenario_id}")
         else:
             # Insert new scenario
+            print(f"[Force Seed] Inserting new scenario: {scenario['slug']}")
             scenario_id = execute_insert(
                 "INSERT INTO scenarios (slug, title, question, description, icon, category) VALUES (%s, %s, %s, %s, %s, %s)",
                 (scenario["slug"], scenario["title"], scenario["question"], scenario.get("description"), scenario.get("icon"), scenario.get("category")),
             )
+            print(f"[Force Seed] Inserted scenario with ID: {scenario_id}")
         
         # Insert options
+        print(f"[Force Seed] Inserting {len(scenario['options'])} options for scenario ID: {scenario_id}")
         for index, option in enumerate(scenario["options"]):
-            execute_insert(
-                "INSERT INTO scenario_options (scenario_id, option_order, option_text, emoji, trait_mapping_json) VALUES (%s, %s, %s, %s, %s)",
-                (scenario_id, index, option["text"], option.get("emoji"), json.dumps(option["traits"])),
-            )
+            try:
+                option_id = execute_insert(
+                    "INSERT INTO scenario_options (scenario_id, option_order, option_text, emoji, trait_mapping_json) VALUES (%s, %s, %s, %s, %s)",
+                    (scenario_id, index, option["text"], option.get("emoji"), json.dumps(option["traits"])),
+                )
+                print(f"[Force Seed] Inserted option {index} with ID: {option_id}")
+            except Exception as e:
+                print(f"[Force Seed] Error inserting option {index}: {str(e)}")
     
     return {"message": "Demo scenarios seeded successfully"}
 
