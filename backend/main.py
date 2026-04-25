@@ -230,6 +230,7 @@ async def setup_db():
                 personality_preference JSONB DEFAULT '{}',
                 image_url TEXT,
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                CONSTRAINT unique_user_post UNIQUE (user_id, title, location, rent),
                 FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
             );
 
@@ -526,17 +527,23 @@ def _build_room_match_payload(user, user_preferences, user_personality, user_tra
 
 def _save_uploaded_images(files: list[UploadFile]) -> list[str]:
     image_urls = []
+    print(f"[Image Upload] Processing {len(files) if files else 0} files")
     for upload in files:
         if not upload or not upload.filename:
+            print(f"[Image Upload] Skipping invalid file")
             continue
         extension = os.path.splitext(upload.filename)[1].lower()
         if extension not in {".jpg", ".jpeg", ".png", ".webp", ".gif"}:
+            print(f"[Image Upload] Skipping invalid extension: {extension}")
             continue
         filename = f"{uuid.uuid4().hex}{extension}"
         destination = os.path.join(UPLOADS_DIR, filename)
+        print(f"[Image Upload] Saving {upload.filename} to {destination}")
         with open(destination, "wb") as buffer:
             shutil.copyfileobj(upload.file, buffer)
         image_urls.append(f"/uploads/{filename}")
+        print(f"[Image Upload] Saved image URL: /uploads/{filename}")
+    print(f"[Image Upload] Total saved: {len(image_urls)} images")
     return image_urls
 
 
