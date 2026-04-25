@@ -9,6 +9,122 @@ const Questionnaire = {
     responses: {},
     basicData: {},
 
+    // Hardcoded scenarios to bypass database issues
+    HARDCODED_SCENARIOS: [
+        {
+            id: "dishes_overnight",
+            title: "The Unwashed Dishes",
+            question: "Your roommate leaves dishes unwashed in the sink overnight. What do you do?",
+            description: "A small mess can reveal a lot about shared-space expectations.",
+            icon: "🍽️",
+            category: "cleanliness",
+            options: [
+                {text: "Do not even notice - no big deal", emoji: "😌", traits: {"cleanliness_tolerance": 5, "conflict_style": 5, "flexibility": 5}},
+                {text: "Clean them yourself without saying anything", emoji: "🧹", traits: {"cleanliness_tolerance": 2, "conflict_style": 4, "flexibility": 4}},
+                {text: "Politely ask them to wash up next time", emoji: "💬", traits: {"cleanliness_tolerance": 2, "conflict_style": 3, "flexibility": 3}},
+                {text: "Get annoyed - this should not happen", emoji: "😤", traits: {"cleanliness_tolerance": 1, "conflict_style": 1, "flexibility": 1}},
+            ],
+        },
+        {
+            id: "loud_music_night",
+            title: "Late Night Beats",
+            question: "It is 11 PM on a weeknight and your roommate starts playing loud music. How do you react?",
+            description: "Noise tolerance matters more than people think.",
+            icon: "🎵",
+            category: "noise",
+            options: [
+                {text: "Join in - the more the merrier", emoji: "🎉", traits: {"noise_tolerance": 5, "social_tolerance": 5, "flexibility": 5}},
+                {text: "Put on headphones and ignore it", emoji: "🎧", traits: {"noise_tolerance": 4, "conflict_style": 5, "flexibility": 4}},
+                {text: "Ask them to lower the volume a bit", emoji: "🤫", traits: {"noise_tolerance": 2, "conflict_style": 3, "flexibility": 3}},
+                {text: "Tell them to stop immediately", emoji: "🛑", traits: {"noise_tolerance": 1, "conflict_style": 1, "flexibility": 1}},
+            ],
+        },
+        {
+            id: "surprise_guests",
+            title: "Unexpected Visitors",
+            question: "Your roommate invites 5 friends over without telling you. You planned a quiet evening. What do you do?",
+            description: "Social energy can make or break a roommate fit.",
+            icon: "🚪",
+            category: "social",
+            options: [
+                {text: "Awesome - more people to hang out with", emoji: "🥳", traits: {"social_tolerance": 5, "flexibility": 5, "conflict_style": 5}},
+                {text: "Join for a bit, then retreat to your room", emoji: "👋", traits: {"social_tolerance": 3, "flexibility": 4, "conflict_style": 4}},
+                {text: "Say you would appreciate a heads up next time", emoji: "📱", traits: {"social_tolerance": 2, "conflict_style": 3, "flexibility": 2}},
+                {text: "Confront them - this is your space too", emoji: "😠", traits: {"social_tolerance": 1, "conflict_style": 1, "flexibility": 1}},
+            ],
+        },
+        {
+            id: "fridge_food",
+            title: "The Missing Leftovers",
+            question: "You discover your roommate ate your leftover food without asking. How do you handle it?",
+            description: "Shared boundaries often show up in everyday moments.",
+            icon: "🍕",
+            category: "sharing",
+            options: [
+                {text: "No worries - food is meant to be shared", emoji: "😊", traits: {"flexibility": 5, "conflict_style": 5, "social_tolerance": 5}},
+                {text: "Mention it casually, but do not make a big deal", emoji: "🤷", traits: {"flexibility": 3, "conflict_style": 3, "social_tolerance": 3}},
+                {text: "Set a clear rule: ask before taking", emoji: "📋", traits: {"flexibility": 2, "conflict_style": 2, "social_tolerance": 2}},
+                {text: "Label everything - boundaries are important", emoji: "🏷️", traits: {"flexibility": 1, "conflict_style": 2, "social_tolerance": 1}},
+            ],
+        },
+        {
+            id: "early_alarm",
+            title: "The Early Alarm",
+            question: "Your roommate's alarm goes off at 5:30 AM every day and wakes you up. What is your approach?",
+            description: "Sleep compatibility is a classic roommate issue.",
+            icon: "⏰",
+            category: "routine",
+            options: [
+                {text: "Might as well start the day early too", emoji: "🌅", traits: {"flexibility": 5, "noise_tolerance": 4, "conflict_style": 5}},
+                {text: "Use earplugs and adapt", emoji: "😴", traits: {"flexibility": 4, "noise_tolerance": 3, "conflict_style": 4}},
+                {text: "Ask for a vibrating alarm instead", emoji: "📳", traits: {"flexibility": 2, "noise_tolerance": 2, "conflict_style": 3}},
+                {text: "This needs to change right away", emoji: "⚠️", traits: {"flexibility": 1, "noise_tolerance": 1, "conflict_style": 1}},
+            ],
+        },
+        {
+            id: "bathroom_schedule",
+            title: "Bathroom Rush Hour",
+            question: "You both need to get ready at 8 AM for work/school. How do you handle the bathroom situation?",
+            description: "Morning routines can make or break the day.",
+            icon: "🚿",
+            category: "routine",
+            options: [
+                {text: "Wake up earlier to avoid conflict", emoji: "⏰", traits: {"flexibility": 5, "planning": 5, "conflict_style": 5}},
+                {text: "Alternate days - fair is fair", emoji: "📅", traits: {"flexibility": 3, "planning": 4, "conflict_style": 3}},
+                {text: "Discuss and create a schedule", emoji: "📝", traits: {"flexibility": 2, "planning": 3, "conflict_style": 2}},
+                {text: "I need my time - they can adjust", emoji: "😤", traits: {"flexibility": 1, "planning": 2, "conflict_style": 1}},
+            ],
+        },
+        {
+            id: "shared_expenses",
+            title: "Bill Splitting",
+            question: "Your roommate forgets to pay their share of the electricity bill for the second month. What do you do?",
+            description: "Money matters can strain even the best friendships.",
+            icon: "💰",
+            category: "financial",
+            options: [
+                {text: "Pay it for them - no big deal", emoji: "💸", traits: {"flexibility": 5, "conflict_style": 5, "trust": 5}},
+                {text: "Remind them gently, but don't stress", emoji: "🤝", traits: {"flexibility": 3, "conflict_style": 3, "trust": 3}},
+                {text: "Set up automatic payments together", emoji: "📱", traits: {"flexibility": 2, "conflict_style": 2, "trust": 2}},
+                {text: "This is unacceptable - need a serious talk", emoji: "😠", traits: {"flexibility": 1, "conflict_style": 1, "trust": 1}},
+            ],
+        },
+        {
+            id: "study_focus",
+            title: "Study Time",
+            question: "You have an important exam tomorrow. Your roommate wants to watch a movie in the living room. What happens?",
+            description: "Focus needs and social balance are key.",
+            icon: "📚",
+            category: "routine",
+            options: [
+                {text: "Study at the library - they can enjoy their time", emoji: "🏛️", traits: {"flexibility": 5, "conflict_style": 5, "social_tolerance": 4}},
+                {text: "Ask them to use headphones, stay in the room", emoji: "🎧", traits: {"flexibility": 3, "conflict_style": 3, "social_tolerance": 3}},
+                {text: "Suggest they watch it another day", emoji: "📅", traits: {"flexibility": 2, "conflict_style": 2, "social_tolerance": 2}},
+                {text: "I need quiet - they need to leave", emoji: "🚫", traits: {"flexibility": 1, "conflict_style": 1, "social_tolerance": 1}},
+            ],
+        },
+    ],
+
     async render() {
         this.step = 0;
         this.responses = {};
@@ -17,22 +133,9 @@ const Questionnaire = {
         c.innerHTML = '<div class="questionnaire-container fade-in"><div class="loader">Loading scenarios...</div></div>';
 
         try {
-            this.scenarios = await Api.getScenarios();
-            console.log("[Questionnaire] Loaded scenarios:", this.scenarios);
-            console.log("[Questionnaire] Number of scenarios:", this.scenarios.length);
-
-            if (!this.scenarios || this.scenarios.length === 0) {
-                c.innerHTML = '<div class="questionnaire-container fade-in"><div class="empty-state"><p>No scenarios available. Please contact support.</p></div>';
-                return;
-            }
-
-            // Check if scenarios have options
-            const hasOptions = this.scenarios.every(s => s.options && s.options.length > 0);
-            if (!hasOptions) {
-                console.error("[Questionnaire] Scenarios missing options:", this.scenarios);
-                c.innerHTML = '<div class="questionnaire-container fade-in"><div class="empty-state"><p>Scenarios are missing options. Please contact support.</p></div>';
-                return;
-            }
+            // Use hardcoded scenarios instead of fetching from API
+            this.scenarios = this.HARDCODED_SCENARIOS;
+            console.log("[Questionnaire] Using hardcoded scenarios:", this.scenarios.length);
 
             // totalSteps = 1 (basic info) + scenarios.length + 1 (review)
             this.totalSteps = 1 + this.scenarios.length + 1;
