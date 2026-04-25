@@ -45,8 +45,8 @@
     --accent-3: #ff4081;
     --gradient-main: linear-gradient(135deg, #ff6b9d, #4fc3f7);
     --gradient-warm: linear-gradient(135deg, #ff4081, #ff80ab);
-    --gradient-success: linear-gradient(135deg, #69f0ae, #b9f6ca);
-    --success: #69f0ae;
+    --gradient-success: linear-gradient(135deg, #ff6b9d, #ff80ab);
+    --success: #ff6b9d;
     --warning: #ffd54f;
     --danger: #ff5252;
     --shadow: 0 8px 32px rgba(255, 107, 157, 0.15);
@@ -150,6 +150,33 @@
 
 [data-theme="pink-blue"] .match-meta span {
     background: rgba(45, 27, 46, 0.2);
+}
+
+[data-theme="pink-blue"] .compare-dropdown {
+    background: rgba(45, 27, 46, 0.95);
+    border-color: rgba(255, 105, 157, 0.3);
+}
+
+[data-theme="pink-blue"] .dd-item:hover {
+    background: rgba(255, 107, 157, 0.15);
+}
+
+[data-theme="pink-blue"] .match-score-ring svg {
+    filter: drop-shadow(0 0 10px rgba(255, 107, 157, 0.3));
+}
+
+[data-theme="pink-blue"] .match-score-ring.score-high .ring-fill {
+    stroke: var(--accent);
+    filter: drop-shadow(0 0 8px rgba(255, 107, 157, 0.5));
+}
+
+[data-theme="pink-blue"] .match-score-ring.score-mid .ring-fill {
+    stroke: var(--accent-2);
+    filter: drop-shadow(0 0 8px rgba(79, 195, 247, 0.5));
+}
+
+[data-theme="pink-blue"] .match-highlight {
+    color: var(--accent);
 }
 
 /* ── Reset & Base ────────────────────────── */
