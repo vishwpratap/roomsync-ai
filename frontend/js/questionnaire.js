@@ -133,17 +133,34 @@ const Questionnaire = {
         c.innerHTML = '<div class="questionnaire-container fade-in"><div class="loader">Loading scenarios...</div></div>';
 
         try {
-            // Use hardcoded scenarios instead of fetching from API
-            this.scenarios = this.HARDCODED_SCENARIOS;
-            console.log("[Questionnaire] Using hardcoded scenarios:", this.scenarios.length);
+            // Try to fetch scenarios from API first (admin-managed)
+            let apiScenarios = await Api.getScenarios();
+            console.log("[Questionnaire] API returned scenarios:", apiScenarios.length);
+
+            // Check if API scenarios are valid (have options)
+            const hasValidOptions = apiScenarios.length > 0 && apiScenarios.every(s => s.options && s.options.length > 0);
+
+            if (hasValidOptions) {
+                // Use API scenarios (admin-managed)
+                this.scenarios = apiScenarios;
+                console.log("[Questionnaire] Using API scenarios (admin-managed):", this.scenarios.length);
+            } else {
+                // Fallback to hardcoded scenarios
+                this.scenarios = this.HARDCODED_SCENARIOS;
+                console.log("[Questionnaire] API scenarios invalid or empty, using hardcoded fallback:", this.scenarios.length);
+            }
 
             // totalSteps = 1 (basic info) + scenarios.length + 1 (review)
             this.totalSteps = 1 + this.scenarios.length + 1;
             this.renderShell();
             this.renderStep();
         } catch (err) {
-            console.error("[Questionnaire] Error loading scenarios:", err);
-            Utils.toast("Failed to load scenarios: " + err.message, "error");
+            console.error("[Questionnaire] Error loading scenarios from API, using hardcoded fallback:", err);
+            // Fallback to hardcoded scenarios on error
+            this.scenarios = this.HARDCODED_SCENARIOS;
+            this.totalSteps = 1 + this.scenarios.length + 1;
+            this.renderShell();
+            this.renderStep();
         }
     },
 
