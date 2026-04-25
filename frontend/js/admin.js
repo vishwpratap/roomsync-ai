@@ -509,7 +509,10 @@ const Admin = {
             target.innerHTML = `
             <div class="admin-section-header">
                 <h3>📝 Scenario Management</h3>
-                <button class="admin-action-btn" onclick="Admin.newScenario()">+ New Scenario</button>
+                <div style="display: flex; gap: 8px;">
+                    <button class="admin-action-btn" onclick="Admin.newScenario()">+ New Scenario</button>
+                    <button class="admin-action-btn" onclick="Admin.clearAndSeedScenarios()">🔄 Clear & Seed Demo</button>
+                </div>
             </div>
             <div class="admin-table-container">
                 <table class="admin-table">
@@ -538,6 +541,27 @@ const Admin = {
         } catch (err) {
             console.error("Failed to load scenarios:", err);
             target.innerHTML = `<p class="error-text">Failed to load scenarios: ${err.message}</p>`;
+        }
+    },
+
+    async clearAndSeedScenarios() {
+        if (!confirm("This will delete all existing scenarios and add 4 demo scenarios. Continue?")) return;
+        try {
+            console.log("Clearing scenarios...");
+            await fetch(`${API_BASE}/admin/clear-scenarios`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" }
+            });
+            console.log("Seeding demo scenarios...");
+            await fetch(`${API_BASE}/admin/seed-demo-scenarios`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" }
+            });
+            Utils.toast("Scenarios cleared and demo data seeded", "success");
+            this.loadScenarios();
+        } catch (err) {
+            console.error("Failed to clear and seed scenarios:", err);
+            Utils.toast("Failed to clear and seed: " + err.message, "error");
         }
     },
 

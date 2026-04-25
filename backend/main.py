@@ -832,6 +832,19 @@ async def admin_seed_demo_scenarios():
         raise HTTPException(status_code=500, detail=f"Failed to seed demo scenarios: {str(e)}")
 
 
+@app.post("/admin/clear-scenarios")
+async def admin_clear_scenarios():
+    """Admin endpoint to clear all scenarios from database"""
+    try:
+        execute_query("DELETE FROM scenario_options")
+        execute_query("DELETE FROM scenarios")
+        print("[Clear Scenarios] All scenarios and options deleted")
+        return {"message": "All scenarios cleared successfully"}
+    except Exception as e:
+        print(f"[Clear Scenarios] Error: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Failed to clear scenarios: {str(e)}")
+
+
 @app.post("/add-user")
 async def add_user(data: UserProfileInput):
     user = execute_query("SELECT id FROM users WHERE id=%s", (data.user_id,), fetch_one=True)
