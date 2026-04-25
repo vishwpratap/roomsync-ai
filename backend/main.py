@@ -772,7 +772,15 @@ async def admin_login(data: AdminLogin):
 
 @app.get("/scenarios")
 async def list_scenarios():
-    return get_all_scenarios()
+    scenarios = get_all_scenarios()
+    print(f"[Scenarios API] Returning {len(scenarios)} scenarios")
+    if scenarios:
+        for i, s in enumerate(scenarios[:3]):  # Log first 3
+            print(f"[Scenarios API] Scenario {i}: id={s.get('id')}, title={s.get('title')}, description={s.get('description')}, icon={s.get('icon')}, options_count={len(s.get('options', []))}")
+            if s.get('options'):
+                for j, opt in enumerate(s['options'][:2]):  # Log first 2 options
+                    print(f"[Scenarios API]   Option {j}: text={opt.get('text')}, emoji={opt.get('emoji')}")
+    return scenarios
 
 
 @app.get("/debug-scenarios")

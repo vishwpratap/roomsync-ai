@@ -120,14 +120,14 @@ const Questionnaire = {
         const selected = this.responses[scenario.id];
         const icon = scenario.icon || "🎭";
         const title = scenario.title || "Scenario";
-        const description = scenario.description || "";
+        const question = scenario.question || scenario.description || "";  // Use question field first, fallback to description
 
         body.innerHTML = `
         <div class="step-content scenario-step fade-in">
             <div class="scenario-header">
                 <span class="scenario-icon">${icon}</span>
                 <h3>${title}</h3>
-                <p class="scenario-desc">${description}</p>
+                <p class="scenario-desc">${question}</p>
             </div>
             <div class="scenario-options">
                 ${scenario.options && scenario.options.length > 0 ? scenario.options.map((opt, i) => `
