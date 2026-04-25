@@ -6,6 +6,7 @@ const Chat = {
     refreshInterval: null,
     websocket: null,
     isConnected: false,
+    usingPolling: false,
 
     async render() {
         const c = Utils.$("#app-content");
@@ -14,6 +15,7 @@ const Chat = {
         // Stop auto-refresh when going back to conversation list
         this.stopAutoRefresh();
         this.currentConversationId = null;
+        this.usingPolling = false;
 
         // Connect to WebSocket
         this.connectWebSocket(s.user_id);
@@ -154,8 +156,13 @@ const Chat = {
             if (input) {
                 input.focus();
             }
-            
-            // Don't start auto-refresh - WebSocket handles real-time updates
+
+            // Start polling as fallback if WebSocket not connected
+            if (!this.isConnected) {
+                this.usingPolling = true;
+                this.startAutoRefresh(conversationId);
+                this.updateConnectionStatus();
+            }
         } catch (err) {
             c.innerHTML = `<div class="empty-state"><p>Error loading conversation: ${err.message}</p></div>`;
         }
@@ -167,7 +174,10 @@ const Chat = {
     startAutoRefresh(conversationId) {
         // Clear any existing interval
         this.stopAutoRefresh();
-        
+
+        this.usingPolling = true;
+        this.updateConnectionStatus();
+
         // Refresh messages every 3 seconds
         this.refreshInterval = setInterval(async () => {
             if (this.currentConversationId === conversationId) {
@@ -195,6 +205,8 @@ const Chat = {
             clearInterval(this.refreshInterval);
             this.refreshInterval = null;
         }
+        this.usingPolling = false;
+        this.updateConnectionStatus();
     },
 
     connectWebSocket(userId) {
@@ -209,6 +221,8 @@ const Chat = {
         this.websocket.onopen = () => {
             console.log("[WebSocket] Connected");
             this.isConnected = true;
+            this.usingPolling = false;
+            this.stopAutoRefresh(); // Stop polling if WebSocket connects
             this.updateConnectionStatus();
         };
 
@@ -222,6 +236,10 @@ const Chat = {
             console.log("[WebSocket] Disconnected");
             this.isConnected = false;
             this.updateConnectionStatus();
+            // Start polling as fallback when WebSocket disconnects
+            if (this.currentConversationId !== null) {
+                this.startAutoRefresh(this.currentConversationId);
+            }
             // Attempt to reconnect after 5 seconds
             setTimeout(() => {
                 if (this.currentConversationId !== null) {
@@ -234,6 +252,10 @@ const Chat = {
             console.error("[WebSocket] Error:", error);
             this.isConnected = false;
             this.updateConnectionStatus();
+            // Start polling immediately on error
+            if (this.currentConversationId !== null) {
+                this.startAutoRefresh(this.currentConversationId);
+            }
         };
     },
 
@@ -249,8 +271,16 @@ const Chat = {
     updateConnectionStatus() {
         const statusEl = Utils.$("#connection-status");
         if (statusEl) {
-            statusEl.className = this.isConnected ? 'status-connected' : 'status-disconnected';
-            statusEl.textContent = this.isConnected ? '● Connected' : '○ Disconnected';
+            if (this.isConnected) {
+                statusEl.className = 'status-connected';
+                statusEl.textContent = '● Connected';
+            } else if (this.usingPolling) {
+                statusEl.className = 'status-polling';
+                statusEl.textContent = '◐ Polling';
+            } else {
+                statusEl.className = 'status-disconnected';
+                statusEl.textContent = '○ Disconnected';
+            }
         }
     },
 
