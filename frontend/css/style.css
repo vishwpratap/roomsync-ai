@@ -285,6 +285,8 @@ label {
 }
 .option-emoji { font-size: 1.8rem; flex-shrink: 0; width: 50px; text-align: center; line-height: 1; padding-top: 2px; }
 .option-text { flex: 1; font-size: 0.95rem; color: var(--text-primary); font-weight: 500; line-height: 1.5; word-wrap: break-word; }
+.option-text::before, .option-text::after { content: none !important; }
+.option-emoji::before, .option-emoji::after { content: none !important; }
 .option-check {
     width: 28px; height: 28px; border-radius: 50%;
     display: flex; align-items: center; justify-content: center;

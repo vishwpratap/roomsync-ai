@@ -154,7 +154,7 @@ def _parse_scenarios(rows):
                 "title": row["title"],
                 "question": row["question"],
                 "description": row.get("description"),
-                "icon": row.get("icon") or "SCENARIO",
+                "icon": row.get("icon") or "",
                 "category": row.get("category") or "general",
                 "options": [],
             }
@@ -166,7 +166,7 @@ def _parse_scenarios(rows):
             current["options"].append({
                 "id": row["option_id"],
                 "text": row["option_text"],
-                "emoji": row.get("emoji") or "OPTION",
+                "emoji": row.get("emoji") or "",
                 "traits": trait_mapping or {},
             })
     return scenarios
@@ -190,9 +190,9 @@ def get_all_scenarios(include_db_ids=False):
         "id": scenario["slug"],
         "title": scenario["title"],
         "description": scenario["question"],
-        "icon": scenario.get("icon") or "SCENARIO",
+        "icon": scenario.get("icon") or "",
         "category": scenario.get("category") or "general",
-        "options": [{"text": option["text"], "emoji": option.get("emoji") or "OPTION", "traits": option["traits"]} for option in scenario["options"]],
+        "options": [{"text": option["text"], "emoji": option.get("emoji") or "", "traits": option["traits"]} for option in scenario["options"]],
     } for scenario in scenarios]
 
 
