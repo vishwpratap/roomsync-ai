@@ -792,13 +792,30 @@ async def check_compatibility(data: CompatibilityRequest):
         if cached:
             import json
             try:
-                highlights = json.loads(cached["highlights_json"]) if cached["highlights_json"] else []
-                warnings = json.loads(cached["warnings_json"]) if cached["warnings_json"] else []
-                conflicts = json.loads(cached["conflicts_json"]) if cached["conflicts_json"] else []
-            except json.JSONDecodeError:
+                # Handle both JSON strings and already-parsed data
+                if isinstance(cached["highlights_json"], str):
+                    highlights = json.loads(cached["highlights_json"])
+                else:
+                    highlights = cached["highlights_json"] if cached["highlights_json"] else []
+            except (json.JSONDecodeError, TypeError):
                 highlights = []
+            
+            try:
+                if isinstance(cached["warnings_json"], str):
+                    warnings = json.loads(cached["warnings_json"])
+                else:
+                    warnings = cached["warnings_json"] if cached["warnings_json"] else []
+            except (json.JSONDecodeError, TypeError):
                 warnings = []
+            
+            try:
+                if isinstance(cached["conflicts_json"], str):
+                    conflicts = json.loads(cached["conflicts_json"])
+                else:
+                    conflicts = cached["conflicts_json"] if cached["conflicts_json"] else []
+            except (json.JSONDecodeError, TypeError):
                 conflicts = []
+            
             recommendation = generate_recommendation(cached["compatibility_score"], cached["risk_level"])
 
             user1, _, _, _ = _get_user_data(data.user1_id)
