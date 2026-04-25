@@ -250,14 +250,19 @@ const Questionnaire = {
                 <p class="scenario-desc">${question}</p>
             </div>
             <div class="scenario-options">
-                ${scenario.options && scenario.options.length > 0 ? scenario.options.map((opt, i) => `
+                ${scenario.options && scenario.options.length > 0 ? scenario.options.map((opt, i) => {
+                    const optText = opt.text || opt.option_text || "";  // Try both field names
+                    const optEmoji = opt.emoji || "📝";
+                    console.log(`[Questionnaire] Option ${i}: text="${optText}", emoji="${optEmoji}"`);
+                    return `
                     <div class="scenario-option ${selected === i ? 'selected' : ''}"
                          onclick="Questionnaire.selectOption('${scenario.id}', ${i})" id="opt-${scenario.id}-${i}">
-                        <span class="option-emoji">${opt.emoji || "📝"}</span>
-                        <span class="option-text">${opt.text || "Option"}</span>
+                        <span class="option-emoji">${optEmoji}</span>
+                        <span class="option-text">${optText}</span>
                         <span class="option-check">${selected === i ? '✓' : ''}</span>
                     </div>
-                `).join("") : '<p class="muted">No options available for this scenario.</p>'}
+                    `;
+                }).join("") : '<p class="muted">No options available for this scenario.</p>'}
             </div>
         </div>`;
     },
