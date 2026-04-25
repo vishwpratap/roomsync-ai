@@ -1449,7 +1449,11 @@ async def admin_update_weights(data: WeightsUpdateInput, admin=Depends(_require_
 
 @app.get("/admin/scenarios")
 async def admin_get_scenarios(admin=Depends(_require_admin)):
-    return get_all_scenarios(include_db_ids=True)
+    try:
+        return get_all_scenarios(include_db_ids=True)
+    except Exception as e:
+        print(f"[Admin Scenarios Error] {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Failed to load scenarios: {str(e)}")
 
 
 @app.post("/admin/scenarios")
