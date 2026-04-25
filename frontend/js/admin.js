@@ -244,10 +244,6 @@ const Admin = {
                     <span class="stat-value">${data.analytics?.average_compatibility_score || 0}%</span>
                     <span class="stat-label">Avg Score</span>
                 </div>
-            </div>
-            <div class="admin-actions-section">
-                <button class="admin-action-btn" onclick="Admin.seedScenarios()">🌱 Re-seed Scenarios</button>
-                <small class="muted">Re-seeds all scenarios with options</small>
             </div>`;
         } catch (err) {
             console.error("Failed to load metrics:", err);
@@ -513,10 +509,6 @@ const Admin = {
             target.innerHTML = `
             <div class="admin-section-header">
                 <h3>📝 Scenario Management</h3>
-                <div style="display: flex; gap: 8px;">
-                    <button class="admin-action-btn" onclick="Admin.newScenario()">+ New Scenario</button>
-                    <button class="admin-action-btn" onclick="Admin.seedScenarios()">🌱 Re-seed Scenarios</button>
-                </div>
             </div>
             <div class="admin-table-container">
                 <table class="admin-table">
@@ -643,10 +635,13 @@ const Admin = {
     },
 
     async editScenario(scenarioId) {
+        console.log("Editing scenario:", scenarioId);
         try {
             const scenarios = await Api.getAdminScenarios();
+            console.log("Loaded scenarios:", scenarios);
             const scenario = scenarios.find(s => s.db_id === scenarioId);
             if (!scenario) {
+                console.error("Scenario not found for ID:", scenarioId);
                 alert("Scenario not found");
                 return;
             }
@@ -716,12 +711,14 @@ const Admin = {
                 </form>
             </div>`;
         } catch (err) {
+            console.error("Failed to load scenario for editing:", err);
             alert("Failed to load scenario: " + err.message);
         }
     },
 
     async saveScenario(e, scenarioId) {
         e.preventDefault();
+        console.log("Saving scenario:", scenarioId);
         try {
             const options = [];
             for (let i = 0; i < 4; i++) {
@@ -742,10 +739,12 @@ const Admin = {
                 options: options
             };
             
+            console.log("Scenario data to save:", scenarioData);
             await Api.updateScenario(scenarioId, scenarioData);
             Utils.toast("Scenario updated successfully", "success");
             this.loadScenarios();
         } catch (err) {
+            console.error("Failed to save scenario:", err);
             Utils.toast("Failed to save scenario: " + err.message, "error");
         }
     },
