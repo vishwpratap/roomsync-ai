@@ -34,8 +34,8 @@
 /* Pink/Blue Theme */
 [data-theme="pink-blue"] {
     --bg-primary: #fce4ec;
-    --bg-card: rgba(255, 182, 193, 0.6);
-    --bg-card-hover: rgba(255, 192, 203, 0.8);
+    --bg-card: #ffb6c1;
+    --bg-card-hover: #ffc0cb;
     --glass-border: rgba(255, 105, 157, 0.4);
     --text-primary: #4a1a2e;
     --text-secondary: #8b3a62;
