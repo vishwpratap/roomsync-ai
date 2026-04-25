@@ -174,10 +174,7 @@ const Admin = {
                 </div>
                 <div class="admin-content" id="admin-content">
                     <div class="admin-section active" id="section-overview">
-                        <div class="admin-cards-grid">
-                            <div class="admin-card" id="admin-metrics"><div class="loader">Loading...</div></div>
-                            <div class="admin-card" id="admin-weights"><div class="loader">Loading...</div></div>
-                        </div>
+                        <div class="admin-card admin-card-full" id="admin-metrics"><div class="loader">Loading...</div></div>
                     </div>
                     <div class="admin-section" id="section-users">
                         <div class="admin-card admin-card-full" id="admin-users"><div class="loader">Loading...</div></div>
@@ -194,7 +191,7 @@ const Admin = {
                 </div>
             </div>
         </div>`;
-        await Promise.all([this.loadMetrics(), this.loadWeights(), this.loadUsers(), this.loadRoomPosts(), this.loadScenarios()]);
+        await Promise.all([this.loadMetrics(), this.loadUsers(), this.loadRoomPosts(), this.loadScenarios()]);
     },
 
     switchSection(section) {
@@ -212,6 +209,11 @@ const Admin = {
             settings: 'Settings'
         };
         document.getElementById('admin-section-title').textContent = titles[section];
+        
+        // Load weights only when switching to settings section
+        if (section === 'settings') {
+            this.loadWeights();
+        }
     },
 
     async loadMetrics() {
@@ -511,7 +513,10 @@ const Admin = {
             target.innerHTML = `
             <div class="admin-section-header">
                 <h3>📝 Scenario Management</h3>
-                <button class="admin-action-btn" onclick="Admin.seedScenarios()">🌱 Re-seed Scenarios</button>
+                <div style="display: flex; gap: 8px;">
+                    <button class="admin-action-btn" onclick="Admin.newScenario()">+ New Scenario</button>
+                    <button class="admin-action-btn" onclick="Admin.seedScenarios()">🌱 Re-seed Scenarios</button>
+                </div>
             </div>
             <div class="admin-table-container">
                 <table class="admin-table">
@@ -540,6 +545,100 @@ const Admin = {
         } catch (err) {
             console.error("Failed to load scenarios:", err);
             target.innerHTML = `<p class="error-text">Failed to load scenarios: ${err.message}</p>`;
+        }
+    },
+
+    async newScenario() {
+        const target = Utils.$("#admin-scenarios");
+        const options = [
+            { text: "", emoji: "", index: 0 },
+            { text: "", emoji: "", index: 1 },
+            { text: "", emoji: "", index: 2 },
+            { text: "", emoji: "", index: 3 }
+        ];
+        
+        target.innerHTML = `
+        <div class="admin-section-header">
+            <h3>📝 New Scenario</h3>
+            <button class="admin-action-btn" onclick="Admin.loadScenarios()">← Back</button>
+        </div>
+        <div class="admin-card">
+            <form class="admin-weight-form" onsubmit="Admin.createScenario(event)">
+                <div class="admin-weight-item">
+                    <label>Title</label>
+                    <input type="text" id="scenario-title" required />
+                </div>
+                <div class="admin-weight-item">
+                    <label>Category</label>
+                    <select id="scenario-category">
+                        ${AdminScenarioCategories.map(category => `<option value="${category}">${Admin.labelize(category)}</option>`).join("")}
+                    </select>
+                </div>
+                <div class="admin-weight-item">
+                    <label>Slug</label>
+                    <input type="text" id="scenario-slug" required />
+                </div>
+                <div class="admin-weight-item" style="grid-column: 1 / -1;">
+                    <label>Question</label>
+                    <textarea id="scenario-question" rows="3" required></textarea>
+                </div>
+                <div class="admin-weight-item" style="grid-column: 1 / -1;">
+                    <label>Admin Note</label>
+                    <textarea id="scenario-description" rows="2"></textarea>
+                </div>
+                <div class="admin-weight-item" style="grid-column: 1 / -1;">
+                    <label>Icon Label</label>
+                    <input type="text" id="scenario-icon" />
+                </div>
+                <div style="grid-column: 1 / -1; margin-top: 20px;">
+                    <h4 style="margin-bottom: 16px;">Response Options</h4>
+                    <div class="admin-weight-grid">
+                        ${options.map((option, index) => `
+                            <div class="admin-weight-item">
+                                <label>Option ${index + 1} Text</label>
+                                <textarea id="option-text-${index}" rows="2"></textarea>
+                            </div>
+                            <div class="admin-weight-item">
+                                <label>Option ${index + 1} Emoji</label>
+                                <input type="text" id="option-emoji-${index}" />
+                            </div>
+                        `).join("")}
+                    </div>
+                </div>
+                <div class="admin-weight-actions">
+                    <button type="submit" class="admin-action-btn" style="background: var(--gradient-main); color: #fff;">Create Scenario</button>
+                </div>
+            </form>
+        </div>`;
+    },
+
+    async createScenario(e) {
+        e.preventDefault();
+        try {
+            const options = [];
+            for (let i = 0; i < 4; i++) {
+                const text = Utils.$(`#option-text-${i}`).value;
+                const emoji = Utils.$(`#option-emoji-${i}`).value;
+                if (text.trim()) {
+                    options.push({ text, emoji });
+                }
+            }
+            
+            const scenarioData = {
+                title: Utils.$("#scenario-title").value,
+                category: Utils.$("#scenario-category").value,
+                slug: Utils.$("#scenario-slug").value,
+                question: Utils.$("#scenario-question").value,
+                description: Utils.$("#scenario-description").value,
+                icon: Utils.$("#scenario-icon").value,
+                options: options
+            };
+            
+            await Api.createScenario(scenarioData);
+            Utils.toast("Scenario created successfully", "success");
+            this.loadScenarios();
+        } catch (err) {
+            Utils.toast("Failed to create scenario: " + err.message, "error");
         }
     },
 
