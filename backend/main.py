@@ -915,13 +915,23 @@ async def create_room_post(
 
 @app.get("/room-posts/{user_id}")
 async def list_room_posts(user_id: int):
-    user, user_preferences, user_personality, user_traits = _get_user_data(user_id)
+    try:
+        user, user_preferences, user_personality, user_traits = _get_user_data(user_id)
+    except HTTPException:
+        # If user hasn't completed profile, return posts without compatibility scores
+        rows = execute_query("SELECT rp.*, u.name AS owner_name, u.roommate_type AS owner_roommate_type FROM room_posts rp JOIN users u ON u.id = rp.user_id WHERE rp.user_id != %s ORDER BY rp.created_at DESC", (user_id,), fetch_all=True) or []
+        return [_serialize_room_post(row) for row in rows]
+
     rows = execute_query("SELECT rp.*, u.name AS owner_name, u.roommate_type AS owner_roommate_type FROM room_posts rp JOIN users u ON u.id = rp.user_id WHERE rp.user_id != %s ORDER BY rp.created_at DESC", (user_id,), fetch_all=True) or []
     posts = []
     for row in rows:
         post = _serialize_room_post(row)
-        posts.append(_build_room_match_payload(user, user_preferences, user_personality, user_traits, post))
-    posts.sort(key=lambda item: item["compatibility"]["total_score"], reverse=True)
+        try:
+            posts.append(_build_room_match_payload(user, user_preferences, user_personality, user_traits, post))
+        except HTTPException:
+            # If room owner hasn't completed profile, return post without compatibility
+            posts.append(post)
+    posts.sort(key=lambda item: item.get("compatibility", {}).get("total_score", 0), reverse=True)
     return posts
 
 
@@ -933,8 +943,12 @@ async def get_room_post(post_id: int, user_id: Optional[int] = Query(default=Non
     post = _serialize_room_post(row)
     if user_id is None:
         return post
-    user, user_preferences, user_personality, user_traits = _get_user_data(user_id)
-    return _build_room_match_payload(user, user_preferences, user_personality, user_traits, post)
+    try:
+        user, user_preferences, user_personality, user_traits = _get_user_data(user_id)
+        return _build_room_match_payload(user, user_preferences, user_personality, user_traits, post)
+    except HTTPException:
+        # If user hasn't completed profile, return post without compatibility
+        return post
 
 
 @app.get("/my-room-posts/{user_id}")
