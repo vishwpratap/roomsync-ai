@@ -252,12 +252,16 @@ const Questionnaire = {
             <div class="scenario-options">
                 ${scenario.options && scenario.options.length > 0 ? scenario.options.map((opt, i) => {
                     const optText = opt.text || opt.option_text || "";  // Try both field names
-                    const optEmoji = opt.emoji || "📝";
+                    const optEmoji = opt.emoji || "";
                     console.log(`[Questionnaire] Option ${i}: text="${optText}", emoji="${optEmoji}"`);
+
+                    // Skip options with empty text
+                    if (!optText.trim()) return '';
+
                     return `
                     <div class="scenario-option ${selected === i ? 'selected' : ''}"
                          onclick="Questionnaire.selectOption('${scenario.id}', ${i})" id="opt-${scenario.id}-${i}">
-                        <span class="option-emoji">${optEmoji}</span>
+                        ${optEmoji ? `<span class="option-emoji">${optEmoji}</span>` : ''}
                         <span class="option-text">${optText}</span>
                         <span class="option-check">${selected === i ? '✓' : ''}</span>
                     </div>
