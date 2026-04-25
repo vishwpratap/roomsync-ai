@@ -4,6 +4,9 @@
  */
 const App = {
     init() {
+        // Initialize theme
+        Utils.initTheme();
+
         // Handle browser back/forward navigation
         window.addEventListener("popstate", (event) => {
             if (event.state) {

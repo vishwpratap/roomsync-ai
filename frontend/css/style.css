@@ -31,6 +31,27 @@
     --font: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
 }
 
+/* Pink/Blue Theme */
+[data-theme="pink-blue"] {
+    --bg-primary: #0f0814;
+    --bg-card: rgba(40, 15, 35, 0.65);
+    --bg-card-hover: rgba(58, 20, 50, 0.75);
+    --glass-border: rgba(255, 105, 157, 0.2);
+    --text-primary: #fce4ec;
+    --text-secondary: #f8bbd9;
+    --text-muted: #c48ba0;
+    --accent: #ff6b9d;
+    --accent-2: #4fc3f7;
+    --accent-3: #ff4081;
+    --gradient-main: linear-gradient(135deg, #ff6b9d, #4fc3f7);
+    --gradient-warm: linear-gradient(135deg, #ff4081, #ff80ab);
+    --gradient-success: linear-gradient(135deg, #69f0ae, #b9f6ca);
+    --success: #69f0ae;
+    --warning: #ffd54f;
+    --danger: #ff5252;
+    --shadow-glow: 0 0 40px rgba(255, 107, 157, 0.2);
+}
+
 /* ── Reset & Base ────────────────────────── */
 *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
 html { font-size: 16px; scroll-behavior: smooth; }
@@ -396,6 +417,47 @@ label {
 
 .sidebar-item.logout:hover {
     background: rgba(255,71,87,0.15);
+}
+
+.sidebar-divider {
+    height: 1px;
+    background: var(--glass-border);
+    margin: 12px 0;
+}
+
+.sidebar-section {
+    padding: 8px 0;
+}
+
+.sidebar-label {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 8px;
+    display: block;
+}
+
+.theme-selector {
+    width: 100%;
+    padding: 8px 12px;
+    background: rgba(0,0,0,0.2);
+    border: 1px solid var(--glass-border);
+    border-radius: var(--radius-xs);
+    color: var(--text-primary);
+    font-size: 0.85rem;
+    cursor: pointer;
+    transition: var(--transition);
+}
+
+.theme-selector:hover {
+    border-color: var(--accent);
+}
+
+.theme-selector:focus {
+    outline: none;
+    border-color: var(--accent);
+    box-shadow: 0 0 0 2px rgba(108,99,255,0.2);
 }
 
 /* Chat Styles */
@@ -1117,6 +1179,41 @@ textarea:focus {
 .admin-footer {
     padding-top: 20px;
     border-top: 1px solid var(--glass-border);
+}
+
+.admin-theme-section {
+    margin-bottom: 12px;
+}
+
+.admin-theme-label {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 8px;
+    display: block;
+}
+
+.admin-theme-selector {
+    width: 100%;
+    padding: 8px 12px;
+    background: rgba(0,0,0,0.2);
+    border: 1px solid var(--glass-border);
+    border-radius: var(--radius-xs);
+    color: var(--text-primary);
+    font-size: 0.85rem;
+    cursor: pointer;
+    transition: var(--transition);
+}
+
+.admin-theme-selector:hover {
+    border-color: var(--accent);
+}
+
+.admin-theme-selector:focus {
+    outline: none;
+    border-color: var(--accent);
+    box-shadow: 0 0 0 2px rgba(108,99,255,0.2);
 }
 
 .admin-logout-btn {

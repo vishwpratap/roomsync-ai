@@ -161,6 +161,13 @@ const Admin = {
                     </button>
                 </nav>
                 <div class="admin-footer">
+                    <div class="admin-theme-section">
+                        <span class="admin-theme-label">Theme</span>
+                        <select class="admin-theme-selector" onchange="Utils.setTheme(this.value)">
+                            <option value="default" ${Utils.getTheme() === 'default' ? 'selected' : ''}>Default (Purple/Blue)</option>
+                            <option value="pink-blue" ${Utils.getTheme() === 'pink-blue' ? 'selected' : ''}>Pink/Blue</option>
+                        </select>
+                    </div>
                     <button class="admin-logout-btn" onclick="App.logout()">
                         <span>🚪</span>
                         <span>Logout</span>

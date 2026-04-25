@@ -36,6 +36,14 @@ const Chat = {
                             <button class="sidebar-item" onclick="Rooms.renderMyPosts()">📝 My Posts</button>
                             <button class="sidebar-item" onclick="Rooms.renderCreate()">➕ Create Post</button>
                             <button class="sidebar-item active" onclick="Chat.render()">💬 Messages</button>
+                            <div class="sidebar-divider"></div>
+                            <div class="sidebar-section">
+                                <span class="sidebar-label">Theme</span>
+                                <select class="theme-selector" onchange="Utils.setTheme(this.value)">
+                                    <option value="default" ${Utils.getTheme() === 'default' ? 'selected' : ''}>Default (Purple/Blue)</option>
+                                    <option value="pink-blue" ${Utils.getTheme() === 'pink-blue' ? 'selected' : ''}>Pink/Blue</option>
+                                </select>
+                            </div>
                             <button class="sidebar-item logout" onclick="App.logout()">🚪 Logout</button>
                         </div>
                     </nav>
@@ -113,6 +121,14 @@ const Chat = {
                             <button class="sidebar-item" onclick="Rooms.renderMyPosts()">📝 My Posts</button>
                             <button class="sidebar-item" onclick="Rooms.renderCreate()">➕ Create Post</button>
                             <button class="sidebar-item active" onclick="Chat.render()">💬 Messages</button>
+                            <div class="sidebar-divider"></div>
+                            <div class="sidebar-section">
+                                <span class="sidebar-label">Theme</span>
+                                <select class="theme-selector" onchange="Utils.setTheme(this.value)">
+                                    <option value="default" ${Utils.getTheme() === 'default' ? 'selected' : ''}>Default (Purple/Blue)</option>
+                                    <option value="pink-blue" ${Utils.getTheme() === 'pink-blue' ? 'selected' : ''}>Pink/Blue</option>
+                                </select>
+                            </div>
                             <button class="sidebar-item logout" onclick="App.logout()">🚪 Logout</button>
                         </div>
                     </nav>

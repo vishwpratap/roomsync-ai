@@ -53,5 +53,23 @@ const Utils = {
 
     clearSession() {
         localStorage.removeItem("roomsync_user");
+    },
+
+    getTheme() {
+        return localStorage.getItem("roomsync_theme") || "default";
+    },
+
+    setTheme(theme) {
+        localStorage.setItem("roomsync_theme", theme);
+        if (theme === "pink-blue") {
+            document.documentElement.setAttribute("data-theme", "pink-blue");
+        } else {
+            document.documentElement.removeAttribute("data-theme");
+        }
+    },
+
+    initTheme() {
+        const theme = this.getTheme();
+        this.setTheme(theme);
     }
 };
