@@ -171,9 +171,25 @@ const Admin = {
                 <div class="stat-card"><strong>${data.risk_distribution.HIGH}</strong><span>High risk</span></div>
                 <div class="stat-card"><strong>${data.analytics.high_risk_matches_percent}%</strong><span>High-risk share</span></div>
             </div>
-            <div class="muted">Top conflict types: ${(data.analytics.most_common_conflict_types || []).map(item => `${item.type} (${item.count})`).join(", ") || 'No data yet'}</div>`;
+            <div class="muted">Top conflict types: ${(data.analytics.most_common_conflict_types || []).map(item => `${item.type} (${item.count})`).join(", ") || 'No data yet'}</div>
+            <div style="margin-top:20px; padding-top:20px; border-top:1px solid rgba(255,255,255,0.1);">
+                <button class="btn btn-danger btn-sm" onclick="Admin.cleanupDuplicatePosts()">🗑️ Cleanup Duplicate Room Posts</button>
+                <small class="muted">Removes duplicate room posts from database (keeps oldest one per user/title/location/rent)</small>
+            </div>`;
         } catch (err) {
             target.innerHTML = `<p>${err.message}</p>`;
+        }
+    },
+
+    async cleanupDuplicatePosts() {
+        if (!confirm("This will delete duplicate room posts from the database. Are you sure?")) return;
+        try {
+            const result = await fetch("https://roomsync-ai.onrender.com/cleanup-duplicate-posts", { method: "POST" });
+            const data = await result.json();
+            alert(data.message);
+            this.loadMetrics();
+        } catch (err) {
+            alert("Failed to cleanup: " + err.message);
         }
     },
 
