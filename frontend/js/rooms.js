@@ -37,7 +37,10 @@ const Rooms = {
 
         try {
             const posts = await Api.getRoomPosts(session.user_id);
-            console.log("[Browse Rooms] Received posts:", posts);
+            console.log("[Browse Rooms] API returned posts:", posts);
+            console.log("[Browse Rooms] Number of posts from API:", posts.length);
+            console.log("[Browse Rooms] Post IDs:", posts.map(p => p.id));
+            
             // Deduplicate by post ID
             const uniquePosts = [];
             const seenIds = new Set();
@@ -45,16 +48,24 @@ const Rooms = {
                 if (!seenIds.has(post.id)) {
                     seenIds.add(post.id);
                     uniquePosts.push(post);
+                } else {
+                    console.log("[Browse Rooms] Skipping duplicate post ID:", post.id);
                 }
             }
-            console.log("[Browse Rooms] Unique posts:", uniquePosts);
+            console.log("[Browse Rooms] Unique posts after dedup:", uniquePosts);
+            console.log("[Browse Rooms] Number of unique posts:", uniquePosts.length);
+            
             const grid = Utils.$("#room-grid");
             if (!uniquePosts.length) {
                 grid.innerHTML = '<div class="empty-state"><p>No room posts yet. You could absolutely be the first one here.</p></div>';
                 return;
             }
-            grid.innerHTML = uniquePosts.map(post => this.roomCard(post)).join("");
+            const html = uniquePosts.map(post => this.roomCard(post)).join("");
+            console.log("[Browse Rooms] Generated HTML length:", html.length);
+            grid.innerHTML = html;
+            console.log("[Browse Rooms] Grid children count after render:", grid.children.length);
         } catch (err) {
+            console.error("[Browse Rooms] Error:", err);
             Utils.$("#room-grid").innerHTML = `<div class="empty-state"><p>${err.message}</p></div>`;
         }
         Chat.loadUnseenCount();
@@ -386,7 +397,10 @@ const Rooms = {
         const session = Utils.getSession();
         try {
             const posts = await Api.getMyRoomPosts(session.user_id);
-            console.log("[My Posts] Received posts:", posts);
+            console.log("[My Posts] API returned posts:", posts);
+            console.log("[My Posts] Number of posts from API:", posts.length);
+            console.log("[My Posts] Post IDs:", posts.map(p => p.id));
+            
             // Deduplicate by post ID
             const uniquePosts = [];
             const seenIds = new Set();
@@ -394,15 +408,23 @@ const Rooms = {
                 if (!seenIds.has(post.id)) {
                     seenIds.add(post.id);
                     uniquePosts.push(post);
+                } else {
+                    console.log("[My Posts] Skipping duplicate post ID:", post.id);
                 }
             }
-            console.log("[My Posts] Unique posts:", uniquePosts);
+            console.log("[My Posts] Unique posts after dedup:", uniquePosts);
+            console.log("[My Posts] Number of unique posts:", uniquePosts.length);
+            
             if (!uniquePosts.length) {
                 grid.innerHTML = '<div class="empty-state"><p>You haven\'t created any room posts yet.</p><button class="btn btn-primary btn-sm" onclick="Rooms.renderCreate()">Create Your First Post</button></div>';
                 return;
             }
-            grid.innerHTML = uniquePosts.map(post => this.myPostCard(post)).join("");
+            const html = uniquePosts.map(post => this.myPostCard(post)).join("");
+            console.log("[My Posts] Generated HTML length:", html.length);
+            grid.innerHTML = html;
+            console.log("[My Posts] Grid children count after render:", grid.children.length);
         } catch (err) {
+            console.error("[My Posts] Error:", err);
             grid.innerHTML = `<div class="empty-state"><p>${err.message}</p></div>`;
         }
     },
