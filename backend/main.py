@@ -122,6 +122,22 @@ async def debug_uploads():
         return {"error": str(e)}
 
 
+@app.get("/debug-posts")
+async def debug_posts():
+    """Debug endpoint to check room posts in database"""
+    try:
+        posts = execute_query("SELECT id, user_id, title, location, rent, image_url FROM room_posts ORDER BY id", fetch_all=True) or []
+        images = execute_query("SELECT id, post_id, image_url FROM room_images ORDER BY id", fetch_all=True) or []
+        return {
+            "total_posts": len(posts),
+            "total_images": len(images),
+            "posts": posts,
+            "images": images
+        }
+    except Exception as e:
+        return {"error": str(e)}
+
+
 @app.post("/cleanup-incomplete-profiles")
 async def cleanup_incomplete_profiles():
     """Delete users who haven't completed onboarding (no preferences/personality data)"""
