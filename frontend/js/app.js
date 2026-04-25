@@ -4,10 +4,20 @@
  */
 const App = {
     init() {
+        // Handle browser back/forward navigation
+        window.addEventListener("popstate", (event) => {
+            if (event.state) {
+                this.navigate(event.state.view, event.state.payload, false);
+            } else {
+                // If no state, go to auth
+                this.navigate("auth", null, false);
+            }
+        });
+
         const session = Utils.getSession();
         if (!session) return this.navigate("auth");
         if (session.role === "admin") return this.navigate("admin-dashboard");
-        
+
         // Try to restore previous page state
         if (session.has_profile) {
             if (Dashboard.restorePageState()) return;
@@ -15,11 +25,11 @@ const App = {
             if (Chat.restorePageState()) return;
             return this.navigate("dashboard");
         }
-        
+
         return this.navigate("questionnaire");
     },
 
-    navigate(view, payload = null) {
+    navigate(view, payload = null, updateHistory = true) {
         switch (view) {
             case "auth": Auth.render(); break;
             case "questionnaire": Questionnaire.render(); break;
@@ -29,6 +39,12 @@ const App = {
             case "room-detail": Rooms.renderDetail(payload); break;
             case "admin-dashboard": Admin.renderDashboard(); break;
             default: Auth.render();
+        }
+
+        // Update browser history for back navigation support
+        if (updateHistory) {
+            const url = `#${view}`;
+            window.history.pushState({ view, payload }, "", url);
         }
     },
 
