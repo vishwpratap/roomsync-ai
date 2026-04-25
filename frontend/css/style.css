@@ -157,6 +157,10 @@
     border-color: rgba(255, 105, 157, 0.3);
 }
 
+[data-theme="pink-blue"] .dd-item {
+    background: transparent;
+}
+
 [data-theme="pink-blue"] .dd-item:hover {
     background: rgba(255, 107, 157, 0.15);
 }
