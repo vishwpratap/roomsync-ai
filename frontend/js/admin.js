@@ -780,138 +780,22 @@ const Admin = {
         }
     },
 
-    scenarioEditor(scenario) {
-        if (!scenario) return '<p class="muted">No scenarios yet.</p>';
-        const options = (scenario.options || []).slice(0, 4).map((option, index) => ({
-            text: option.text || "",
-            emoji: option.emoji || "",
-            style: this.detectOptionStyle(option.traits),
-            index,
-        }));
-        while (options.length < 4) {
-            options.push({ text: "", emoji: "", style: "adaptive", index: options.length });
-        }
-        return `
-        <form class="fields-grid" onsubmit="Admin.saveScenario(event, ${scenario.db_id || 0})">
-            <div class="field"><label>Title</label><input type="text" id="scenario-title" value="${scenario.title || ''}" required /></div>
-            <div class="field"><label>Category</label><select id="scenario-category" onchange="Admin.onCategoryChange(this.value)">${AdminScenarioCategories.map(category => `<option value="${category}" ${scenario.category === category ? "selected" : ""}>${Admin.labelize(category)}</option>`).join("")}</select></div>
-            <div class="field"><label>Slug</label><input type="text" id="scenario-slug" value="${scenario.slug || ''}" required /></div>
-            <div class="field full"><label>Question</label><textarea id="scenario-question" rows="3" required>${scenario.question || ''}</textarea></div>
-            <div class="field full"><label>Admin Note</label><textarea id="scenario-description" rows="2">${scenario.description || ''}</textarea></div>
-            <div class="field"><label>Icon Label</label><input type="text" id="scenario-icon" value="${scenario.icon || ''}" /></div>
-            <div class="field full">
-                <div class="scenario-help-row">
-                    <label>Response Options</label>
-                    <button class="btn btn-secondary btn-xs" type="button" onclick="Admin.applyPresetToCurrent()">Fill Starter Options</button>
-                </div>
-                <div class="scenario-option-editor-grid">
-                    ${options.map((option, index) => `
-                        <div class="scenario-option-editor">
-                            <h5>Option ${index + 1}</h5>
-                            <label>Option Text</label>
-                            <textarea id="option-text-${index}" rows="2" required>${option.text}</textarea>
-                            <label>Behavior Style</label>
-                            <select id="option-style-${index}">
-                                ${Object.entries(AdminOptionStyles).map(([styleKey, style]) => `<option value="${styleKey}" ${option.style === styleKey ? "selected" : ""}>${style.label}</option>`).join("")}
-                            </select>
-                            <p class="muted">${this.styleHelpText(option.style)}</p>
-                        </div>
-                    `).join("")}
-                </div>
-            </div>
-            <button class="btn btn-primary btn-sm" type="submit">Save Scenario</button>
-        </form>`;
+    detectOptionStyle(traits) {
+        if (!traits) return "adaptive";
+        const avg = Object.values(traits).reduce((a, b) => a + b, 0) / Object.values(traits).length;
+        if (avg >= 4.5) return "easygoing";
+        if (avg >= 3) return "adaptive";
+        if (avg >= 2) return "communicative";
+        return "strict";
     },
 
-    detectOptionStyle(traits = {}) {
-        const styles = Object.entries(AdminOptionStyles);
-        for (const [styleKey, style] of styles) {
-            if (JSON.stringify(style.traits) === JSON.stringify(traits || {})) {
-                return styleKey;
-            }
-        }
-        return "adaptive";
-    },
-
-    styleHelpText(styleKey) {
+    getStyleMessage(styleKey) {
         const messages = {
-            easygoing: "Very tolerant and flexible in shared living situations.",
-            adaptive: "Usually adjusts first and keeps the peace.",
+            easygoing: "Very flexible and easy to live with.",
+            adaptive: "Can adjust and compromise when needed.",
             communicative: "Prefers talking things through and setting expectations.",
             strict: "Needs firm boundaries and clear standards.",
         };
         return messages[styleKey] || messages.adaptive;
     },
-
-    editScenario(id) {
-        this.selectedScenarioId = id;
-        this.loadScenarios();
-    },
-
-    newScenario() {
-        const editor = Utils.$("#scenario-editor");
-        const preset = AdminScenarioPresets.cleanliness;
-        editor.innerHTML = this.scenarioEditor({
-            db_id: 0,
-            slug: "new_scenario",
-            title: preset.title,
-            question: preset.question,
-            description: preset.description,
-            icon: "SCENARIO",
-            category: "cleanliness",
-            options: preset.options.map(option => ({ text: option.text, emoji: "", traits: AdminOptionStyles[option.style].traits })),
-        });
-    },
-
-    onCategoryChange(category) {
-        const slugField = Utils.$("#scenario-slug");
-        if (slugField && (!slugField.value || slugField.value === "new_scenario")) {
-            slugField.value = `${category}_scenario`;
-        }
-    },
-
-    applyPresetToCurrent() {
-        const category = Utils.$("#scenario-category")?.value || "cleanliness";
-        const preset = AdminScenarioPresets[category];
-        if (!preset) return;
-        Utils.$("#scenario-title").value = preset.title;
-        Utils.$("#scenario-question").value = preset.question;
-        Utils.$("#scenario-description").value = preset.description;
-        Utils.$("#scenario-slug").value = `${category}_${preset.title.toLowerCase().replace(/[^a-z0-9]+/g, "_").replace(/^_|_$/g, "")}`;
-        for (let index = 0; index < 4; index += 1) {
-            const option = preset.options[index];
-            if (!option) continue;
-            Utils.$(`#option-text-${index}`).value = option.text;
-            Utils.$(`#option-style-${index}`).value = option.style;
-        }
-    },
-
-    async saveScenario(e, scenarioId) {
-        e.preventDefault();
-        try {
-            const options = [0, 1, 2, 3].map(index => {
-                const style = Utils.$(`#option-style-${index}`).value;
-                return {
-                    text: Utils.$(`#option-text-${index}`).value.trim(),
-                    emoji: "",
-                    traits: AdminOptionStyles[style].traits,
-                };
-            });
-            const payload = {
-                slug: Utils.$("#scenario-slug").value.trim(),
-                title: Utils.$("#scenario-title").value.trim(),
-                question: Utils.$("#scenario-question").value.trim(),
-                description: Utils.$("#scenario-description").value.trim(),
-                icon: Utils.$("#scenario-icon").value.trim(),
-                category: Utils.$("#scenario-category").value.trim(),
-                options,
-            };
-            if (scenarioId) await Api.updateScenario(scenarioId, payload);
-            else await Api.createScenario(payload);
-            Utils.toast("Scenario saved", "success");
-            this.loadScenarios();
-        } catch (err) {
-            Utils.toast(`Scenario save failed: ${err.message}`, "error");
-        }
-    }
 };
