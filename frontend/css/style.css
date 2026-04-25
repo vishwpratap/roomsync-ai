@@ -158,7 +158,7 @@
 }
 
 [data-theme="pink-blue"] .dd-item {
-    background: transparent;
+    background: rgba(255, 182, 193, 0.3);
 }
 
 [data-theme="pink-blue"] .dd-item:hover {
