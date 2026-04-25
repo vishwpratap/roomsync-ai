@@ -13,7 +13,7 @@ from typing import Optional
 import psycopg2
 from psycopg2.extras import RealDictCursor
 
-from fastapi import Depends, FastAPI, File, Form, Header, HTTPException, Query, Request, UploadFile
+from fastapi import Depends, FastAPI, File, Form, Header, HTTPException, Query, Request, UploadFile, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
@@ -45,6 +45,37 @@ if os.path.exists(FRONTEND_DIR):
     app.mount("/static", StaticFiles(directory=FRONTEND_DIR), name="static")
 if os.path.exists(UPLOADS_DIR):
     app.mount("/uploads", StaticFiles(directory=UPLOADS_DIR), name="uploads")
+
+
+# WebSocket Connection Manager
+class ConnectionManager:
+    def __init__(self):
+        self.active_connections: dict[int, WebSocket] = {}
+
+    async def connect(self, user_id: int, websocket: WebSocket):
+        await websocket.accept()
+        self.active_connections[user_id] = websocket
+        print(f"[WebSocket] User {user_id} connected")
+
+    def disconnect(self, user_id: int):
+        if user_id in self.active_connections:
+            del self.active_connections[user_id]
+            print(f"[WebSocket] User {user_id} disconnected")
+
+    async def send_personal_message(self, message: dict, user_id: int):
+        if user_id in self.active_connections:
+            await self.active_connections[user_id].send_json(message)
+            print(f"[WebSocket] Sent message to user {user_id}")
+
+    async def broadcast_to_conversation(self, message: dict, conversation_id: int):
+        # Get conversation participants
+        conv = execute_query("SELECT user1_id, user2_id FROM conversations WHERE id=%s", (conversation_id,), fetch_one=True)
+        if conv:
+            for user_id in [conv["user1_id"], conv["user2_id"]]:
+                await self.send_personal_message(message, user_id)
+
+
+manager = ConnectionManager()
 
 
 @app.exception_handler(Exception)
@@ -1199,16 +1230,43 @@ async def send_message(conversation_id: int = Form(...), sender_id: int = Form(.
     )
     if not conv:
         raise HTTPException(status_code=404, detail="Conversation not found")
-    
+
     message_id = execute_insert(
         "INSERT INTO messages (conversation_id, sender_id, message_content) VALUES (%s, %s, %s)",
         (conversation_id, sender_id, message_content)
     )
-    
+
     # Update conversation timestamp
     execute_update("UPDATE conversations SET updated_at=CURRENT_TIMESTAMP WHERE id=%s", (conversation_id,))
-    
+
+    # Get the full message with sender name for broadcasting
+    message = execute_query(
+        """SELECT m.id, m.conversation_id, m.sender_id, m.message_content, m.read_status, m.created_at,
+           u.name AS sender_name
+           FROM messages m
+           JOIN users u ON m.sender_id = u.id
+           WHERE m.id=%s""",
+        (message_id,),
+        fetch_one=True
+    )
+
+    # Broadcast via WebSocket to both participants
+    await manager.broadcast_to_conversation(message, conversation_id)
+
     return {"message": "Message sent successfully", "message_id": message_id}
+
+
+@app.websocket("/ws/{user_id}")
+async def websocket_endpoint(websocket: WebSocket, user_id: int):
+    """WebSocket endpoint for real-time chat"""
+    await manager.connect(user_id, websocket)
+    try:
+        while True:
+            # Keep connection alive and handle incoming messages if needed
+            data = await websocket.receive_text()
+            # Could handle typing indicators, etc. here
+    except WebSocketDisconnect:
+        manager.disconnect(user_id)
 
 
 @app.get("/unseen-count/{user_id}")

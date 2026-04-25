@@ -4,14 +4,19 @@
 const Chat = {
     currentConversationId: null,
     refreshInterval: null,
+    websocket: null,
+    isConnected: false,
 
     async render() {
         const c = Utils.$("#app-content");
         const s = Utils.getSession();
-        
+
         // Stop auto-refresh when going back to conversation list
         this.stopAutoRefresh();
         this.currentConversationId = null;
+
+        // Connect to WebSocket
+        this.connectWebSocket(s.user_id);
         
         try {
             const conversations = await Api.getConversations(s.user_id);
@@ -116,6 +121,7 @@ const Chat = {
                         <div class="dash-welcome">
                             <h2>Chat with ${otherUserName}</h2>
                             ${conversation.post_title ? `<p class="dash-subtitle">About: ${conversation.post_title}</p>` : ''}
+                            <span id="connection-status" class="connection-status status-disconnected">○ Disconnected</span>
                         </div>
                     </div>
                     <div class="dash-section">
@@ -149,8 +155,7 @@ const Chat = {
                 input.focus();
             }
             
-            // Start auto-refresh for messages
-            this.startAutoRefresh(conversationId);
+            // Don't start auto-refresh - WebSocket handles real-time updates
         } catch (err) {
             c.innerHTML = `<div class="empty-state"><p>Error loading conversation: ${err.message}</p></div>`;
         }
@@ -189,6 +194,76 @@ const Chat = {
         if (this.refreshInterval) {
             clearInterval(this.refreshInterval);
             this.refreshInterval = null;
+        }
+    },
+
+    connectWebSocket(userId) {
+        // Close existing connection if any
+        if (this.websocket) {
+            this.websocket.close();
+        }
+
+        const wsUrl = `wss://roomsync-ai.onrender.com/ws/${userId}`;
+        this.websocket = new WebSocket(wsUrl);
+
+        this.websocket.onopen = () => {
+            console.log("[WebSocket] Connected");
+            this.isConnected = true;
+            this.updateConnectionStatus();
+        };
+
+        this.websocket.onmessage = (event) => {
+            const message = JSON.parse(event.data);
+            console.log("[WebSocket] Received message:", message);
+            this.handleIncomingMessage(message);
+        };
+
+        this.websocket.onclose = () => {
+            console.log("[WebSocket] Disconnected");
+            this.isConnected = false;
+            this.updateConnectionStatus();
+            // Attempt to reconnect after 5 seconds
+            setTimeout(() => {
+                if (this.currentConversationId !== null) {
+                    this.connectWebSocket(userId);
+                }
+            }, 5000);
+        };
+
+        this.websocket.onerror = (error) => {
+            console.error("[WebSocket] Error:", error);
+            this.isConnected = false;
+            this.updateConnectionStatus();
+        };
+    },
+
+    disconnectWebSocket() {
+        if (this.websocket) {
+            this.websocket.close();
+            this.websocket = null;
+            this.isConnected = false;
+            this.updateConnectionStatus();
+        }
+    },
+
+    updateConnectionStatus() {
+        const statusEl = Utils.$("#connection-status");
+        if (statusEl) {
+            statusEl.className = this.isConnected ? 'status-connected' : 'status-disconnected';
+            statusEl.textContent = this.isConnected ? '● Connected' : '○ Disconnected';
+        }
+    },
+
+    handleIncomingMessage(message) {
+        // Only handle if we're in the conversation
+        if (this.currentConversationId === message.conversation_id) {
+            const messagesContainer = Utils.$("#chat-messages");
+            if (messagesContainer) {
+                const s = Utils.getSession();
+                const messageHTML = this.messageCard(message, s.user_id);
+                messagesContainer.insertAdjacentHTML('beforeend', messageHTML);
+                messagesContainer.scrollTop = messagesContainer.scrollHeight;
+            }
         }
     },
 
