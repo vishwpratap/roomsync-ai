@@ -37,9 +37,9 @@
     --bg-card: #ffb6c1;
     --bg-card-hover: #ffc0cb;
     --glass-border: rgba(255, 105, 157, 0.4);
-    --text-primary: #2d1b2e;
-    --text-secondary: #5c2a4a;
-    --text-muted: #7a3a5a;
+    --text-primary: #4a1a2e;
+    --text-secondary: #8b3a62;
+    --text-muted: #a85a7a;
     --accent: #ff6b9d;
     --accent-2: #4fc3f7;
     --accent-3: #ff4081;
@@ -78,7 +78,7 @@
 [data-theme="pink-blue"] input[type="password"],
 [data-theme="pink-blue"] input[type="number"],
 [data-theme="pink-blue"] select {
-    background: rgba(45, 27, 46, 0.3);
+    background: rgba(255, 182, 193, 0.4);
     border-color: rgba(255, 105, 157, 0.3);
 }
 
@@ -86,17 +86,17 @@
 [data-theme="pink-blue"] select:focus {
     border-color: var(--accent);
     box-shadow: 0 0 0 3px rgba(255, 107, 157, 0.2), 0 0 20px rgba(255, 107, 157, 0.15);
-    background: rgba(45, 27, 46, 0.4);
+    background: rgba(255, 192, 203, 0.5);
 }
 
 [data-theme="pink-blue"] select option {
-    background: #2d1b2e;
+    background: #ffb6c1;
     color: var(--text-primary);
 }
 
 [data-theme="pink-blue"] .theme-selector,
 [data-theme="pink-blue"] .admin-theme-selector {
-    background: rgba(45, 27, 46, 0.4);
+    background: rgba(255, 182, 193, 0.5);
     border-color: rgba(255, 105, 157, 0.3);
 }
 
@@ -149,11 +149,11 @@
 }
 
 [data-theme="pink-blue"] .match-meta span {
-    background: rgba(45, 27, 46, 0.2);
+    background: rgba(255, 182, 193, 0.3);
 }
 
 [data-theme="pink-blue"] .compare-dropdown {
-    background: rgba(45, 27, 46, 0.95);
+    background: rgba(255, 182, 193, 0.95);
     border-color: rgba(255, 105, 157, 0.3);
 }
 
@@ -184,7 +184,7 @@
 }
 
 [data-theme="pink-blue"] .admin-sidebar {
-    background: rgba(45, 27, 46, 0.95);
+    background: rgba(255, 182, 193, 0.95);
     border-right-color: rgba(255, 105, 157, 0.3);
 }
 
@@ -206,12 +206,12 @@
 }
 
 [data-theme="pink-blue"] .admin-refresh-btn {
-    background: rgba(45, 27, 46, 0.3);
+    background: rgba(255, 182, 193, 0.4);
     border-color: rgba(255, 105, 157, 0.3);
 }
 
 [data-theme="pink-blue"] .admin-refresh-btn:hover {
-    background: rgba(45, 27, 46, 0.4);
+    background: rgba(255, 192, 203, 0.5);
     border-color: var(--accent);
 }
 
