@@ -955,10 +955,10 @@ async def list_room_posts(user_id: int):
         user, user_preferences, user_personality, user_traits = _get_user_data(user_id)
     except HTTPException:
         # If user hasn't completed profile, return posts without compatibility scores
-        rows = execute_query("SELECT DISTINCT ON (rp.id) rp.*, u.name AS owner_name, u.roommate_type AS owner_roommate_type FROM room_posts rp JOIN users u ON u.id = rp.user_id WHERE rp.user_id != %s ORDER BY rp.created_at DESC", (user_id,), fetch_all=True) or []
+        rows = execute_query("SELECT DISTINCT ON (rp.id) rp.*, u.name AS owner_name, u.roommate_type AS owner_roommate_type FROM room_posts rp JOIN users u ON u.id = rp.user_id WHERE rp.user_id != %s ORDER BY rp.id, rp.created_at DESC", (user_id,), fetch_all=True) or []
         return [_serialize_room_post(row) for row in rows]
 
-    rows = execute_query("SELECT DISTINCT ON (rp.id) rp.*, u.name AS owner_name, u.roommate_type AS owner_roommate_type FROM room_posts rp JOIN users u ON u.id = rp.user_id WHERE rp.user_id != %s ORDER BY rp.created_at DESC", (user_id,), fetch_all=True) or []
+    rows = execute_query("SELECT DISTINCT ON (rp.id) rp.*, u.name AS owner_name, u.roommate_type AS owner_roommate_type FROM room_posts rp JOIN users u ON u.id = rp.user_id WHERE rp.user_id != %s ORDER BY rp.id, rp.created_at DESC", (user_id,), fetch_all=True) or []
     posts = []
     for row in rows:
         post = _serialize_room_post(row)
@@ -990,7 +990,7 @@ async def get_room_post(post_id: int, user_id: Optional[int] = Query(default=Non
 
 @app.get("/my-room-posts/{user_id}")
 async def my_room_posts(user_id: int):
-    rows = execute_query("SELECT DISTINCT ON (rp.id) rp.*, u.name AS owner_name, u.roommate_type AS owner_roommate_type FROM room_posts rp JOIN users u ON u.id = rp.user_id WHERE rp.user_id=%s ORDER BY rp.created_at DESC", (user_id,), fetch_all=True) or []
+    rows = execute_query("SELECT DISTINCT ON (rp.id) rp.*, u.name AS owner_name, u.roommate_type AS owner_roommate_type FROM room_posts rp JOIN users u ON u.id = rp.user_id WHERE rp.user_id=%s ORDER BY rp.id, rp.created_at DESC", (user_id,), fetch_all=True) or []
     return [_serialize_room_post(row) for row in rows]
 
 
