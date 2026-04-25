@@ -216,25 +216,30 @@ const Admin = {
 
     async loadMetrics() {
         const target = Utils.$("#admin-metrics");
+        if (!target) {
+            console.error("Admin metrics target not found");
+            return;
+        }
         try {
+            target.innerHTML = '<div class="loader">Loading...</div>';
             const data = await Api.getAdminDashboard();
             target.innerHTML = `
             <h3>📊 Overview</h3>
             <div class="admin-stats-grid">
                 <div class="admin-stat-item">
-                    <span class="stat-value">${data.total_users}</span>
+                    <span class="stat-value">${data.total_users || 0}</span>
                     <span class="stat-label">Total Users</span>
                 </div>
                 <div class="admin-stat-item">
-                    <span class="stat-value">${data.total_room_posts}</span>
+                    <span class="stat-value">${data.total_room_posts || 0}</span>
                     <span class="stat-label">Room Posts</span>
                 </div>
                 <div class="admin-stat-item">
-                    <span class="stat-value">${data.total_matches_generated}</span>
+                    <span class="stat-value">${data.total_matches_generated || 0}</span>
                     <span class="stat-label">Matches</span>
                 </div>
                 <div class="admin-stat-item">
-                    <span class="stat-value">${data.analytics.average_compatibility_score}%</span>
+                    <span class="stat-value">${data.analytics?.average_compatibility_score || 0}%</span>
                     <span class="stat-label">Avg Score</span>
                 </div>
             </div>
@@ -243,7 +248,8 @@ const Admin = {
                 <small class="muted">Re-seeds all scenarios with options</small>
             </div>`;
         } catch (err) {
-            target.innerHTML = `<p class="error-text">${err.message}</p>`;
+            console.error("Failed to load metrics:", err);
+            target.innerHTML = `<p class="error-text">Failed to load overview: ${err.message}</p>`;
         }
     },
 
@@ -273,7 +279,12 @@ const Admin = {
 
     async loadRoomPosts() {
         const target = Utils.$("#admin-posts");
+        if (!target) {
+            console.error("Admin posts target not found");
+            return;
+        }
         try {
+            target.innerHTML = '<div class="loader">Loading...</div>';
             const data = await fetch("https://roomsync-ai.onrender.com/admin/room-posts").then(r => r.json());
             const posts = data.posts || [];
             target.innerHTML = `
@@ -308,7 +319,8 @@ const Admin = {
                 </table>
             </div>`;
         } catch (err) {
-            target.innerHTML = `<p class="error-text">${err.message}</p>`;
+            console.error("Failed to load room posts:", err);
+            target.innerHTML = `<p class="error-text">Failed to load room posts: ${err.message}</p>`;
         }
     },
 
@@ -339,7 +351,12 @@ const Admin = {
 
     async loadWeights() {
         const target = Utils.$("#admin-settings");
+        if (!target) {
+            console.error("Admin settings target not found");
+            return;
+        }
         try {
+            target.innerHTML = '<div class="loader">Loading...</div>';
             const weights = await Api.getWeights();
             target.innerHTML = `
             <div class="admin-section-header">
@@ -378,7 +395,8 @@ const Admin = {
                 </form>
             </div>`;
         } catch (err) {
-            target.innerHTML = `<p class="error-text">${err.message}</p>`;
+            console.error("Failed to load weights:", err);
+            target.innerHTML = `<p class="error-text">Failed to load settings: ${err.message}</p>`;
         }
     },
 
@@ -407,7 +425,12 @@ const Admin = {
 
     async loadUsers(search = "") {
         const target = Utils.$("#admin-users");
+        if (!target) {
+            console.error("Admin users target not found");
+            return;
+        }
         try {
+            target.innerHTML = '<div class="loader">Loading...</div>';
             const users = await Api.getAdminUsers(search);
             if (users.length && !users.some(user => user.id === this.selectedUserId)) {
                 this.selectedUserId = users[0].id;
@@ -445,7 +468,8 @@ const Admin = {
                 </table>
             </div>`;
         } catch (err) {
-            target.innerHTML = `<p class="error-text">${err.message}</p>`;
+            console.error("Failed to load users:", err);
+            target.innerHTML = `<p class="error-text">Failed to load users: ${err.message}</p>`;
         }
     },
 
@@ -477,7 +501,12 @@ const Admin = {
 
     async loadScenarios() {
         const target = Utils.$("#admin-scenarios");
+        if (!target) {
+            console.error("Admin scenarios target not found");
+            return;
+        }
         try {
+            target.innerHTML = '<div class="loader">Loading...</div>';
             const scenarios = await Api.getAdminScenarios();
             target.innerHTML = `
             <div class="admin-section-header">
@@ -501,7 +530,7 @@ const Admin = {
                             <td><span class="admin-badge-small">${s.category || '-'}</span></td>
                             <td>${s.options?.length || 0} options</td>
                             <td>
-                                <button class="admin-table-btn" onclick="alert('Edit functionality coming soon')">Edit</button>
+                                <button class="admin-table-btn" onclick="Admin.editScenario(${s.db_id})">Edit</button>
                             </td>
                         </tr>
                         `).join("") || '<tr><td colspan="4" class="no-data">No scenarios found</td></tr>'}
@@ -509,7 +538,116 @@ const Admin = {
                 </table>
             </div>`;
         } catch (err) {
-            target.innerHTML = `<p class="error-text">${err.message}</p>`;
+            console.error("Failed to load scenarios:", err);
+            target.innerHTML = `<p class="error-text">Failed to load scenarios: ${err.message}</p>`;
+        }
+    },
+
+    async editScenario(scenarioId) {
+        try {
+            const scenarios = await Api.getAdminScenarios();
+            const scenario = scenarios.find(s => s.db_id === scenarioId);
+            if (!scenario) {
+                alert("Scenario not found");
+                return;
+            }
+            
+            const options = (scenario.options || []).slice(0, 4).map((option, index) => ({
+                text: option.text || "",
+                emoji: option.emoji || "",
+                index,
+            }));
+            
+            while (options.length < 4) {
+                options.push({ text: "", emoji: "", index: options.length });
+            }
+            
+            const target = Utils.$("#admin-scenarios");
+            target.innerHTML = `
+            <div class="admin-section-header">
+                <h3>📝 Edit Scenario</h3>
+                <button class="admin-action-btn" onclick="Admin.loadScenarios()">← Back</button>
+            </div>
+            <div class="admin-card">
+                <form class="admin-weight-form" onsubmit="Admin.saveScenario(event, ${scenario.db_id})">
+                    <div class="admin-weight-item">
+                        <label>Title</label>
+                        <input type="text" id="scenario-title" value="${scenario.title || ''}" required />
+                    </div>
+                    <div class="admin-weight-item">
+                        <label>Category</label>
+                        <select id="scenario-category">
+                            ${AdminScenarioCategories.map(category => `<option value="${category}" ${scenario.category === category ? "selected" : ""}>${Admin.labelize(category)}</option>`).join("")}
+                        </select>
+                    </div>
+                    <div class="admin-weight-item">
+                        <label>Slug</label>
+                        <input type="text" id="scenario-slug" value="${scenario.slug || ''}" required />
+                    </div>
+                    <div class="admin-weight-item" style="grid-column: 1 / -1;">
+                        <label>Question</label>
+                        <textarea id="scenario-question" rows="3" required>${scenario.question || ''}</textarea>
+                    </div>
+                    <div class="admin-weight-item" style="grid-column: 1 / -1;">
+                        <label>Admin Note</label>
+                        <textarea id="scenario-description" rows="2">${scenario.description || ''}</textarea>
+                    </div>
+                    <div class="admin-weight-item" style="grid-column: 1 / -1;">
+                        <label>Icon Label</label>
+                        <input type="text" id="scenario-icon" value="${scenario.icon || ''}" />
+                    </div>
+                    <div style="grid-column: 1 / -1; margin-top: 20px;">
+                        <h4 style="margin-bottom: 16px;">Response Options</h4>
+                        <div class="admin-weight-grid">
+                            ${options.map((option, index) => `
+                                <div class="admin-weight-item">
+                                    <label>Option ${index + 1} Text</label>
+                                    <textarea id="option-text-${index}" rows="2" required>${option.text}</textarea>
+                                </div>
+                                <div class="admin-weight-item">
+                                    <label>Option ${index + 1} Emoji</label>
+                                    <input type="text" id="option-emoji-${index}" value="${option.emoji}" />
+                                </div>
+                            `).join("")}
+                        </div>
+                    </div>
+                    <div class="admin-weight-actions">
+                        <button type="submit" class="admin-action-btn" style="background: var(--gradient-main); color: #fff;">Save Scenario</button>
+                    </div>
+                </form>
+            </div>`;
+        } catch (err) {
+            alert("Failed to load scenario: " + err.message);
+        }
+    },
+
+    async saveScenario(e, scenarioId) {
+        e.preventDefault();
+        try {
+            const options = [];
+            for (let i = 0; i < 4; i++) {
+                const text = Utils.$(`#option-text-${i}`).value;
+                const emoji = Utils.$(`#option-emoji-${i}`).value;
+                if (text.trim()) {
+                    options.push({ text, emoji });
+                }
+            }
+            
+            const scenarioData = {
+                title: Utils.$("#scenario-title").value,
+                category: Utils.$("#scenario-category").value,
+                slug: Utils.$("#scenario-slug").value,
+                question: Utils.$("#scenario-question").value,
+                description: Utils.$("#scenario-description").value,
+                icon: Utils.$("#scenario-icon").value,
+                options: options
+            };
+            
+            await Api.updateScenario(scenarioId, scenarioData);
+            Utils.toast("Scenario updated successfully", "success");
+            this.loadScenarios();
+        } catch (err) {
+            Utils.toast("Failed to save scenario: " + err.message, "error");
         }
     },
 
