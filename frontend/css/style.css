@@ -33,13 +33,13 @@
 
 /* Pink/Blue Theme */
 [data-theme="pink-blue"] {
-    --bg-primary: #0f0814;
-    --bg-card: rgba(40, 15, 35, 0.65);
-    --bg-card-hover: rgba(58, 20, 50, 0.75);
-    --glass-border: rgba(255, 105, 157, 0.2);
-    --text-primary: #fce4ec;
-    --text-secondary: #f8bbd9;
-    --text-muted: #c48ba0;
+    --bg-primary: #2d1b2e;
+    --bg-card: rgba(80, 35, 60, 0.75);
+    --bg-card-hover: rgba(100, 45, 75, 0.85);
+    --glass-border: rgba(255, 105, 157, 0.3);
+    --text-primary: #fff0f5;
+    --text-secondary: #ffb6c1;
+    --text-muted: #d48ba0;
     --accent: #ff6b9d;
     --accent-2: #4fc3f7;
     --accent-3: #ff4081;
@@ -49,7 +49,20 @@
     --success: #69f0ae;
     --warning: #ffd54f;
     --danger: #ff5252;
-    --shadow-glow: 0 0 40px rgba(255, 107, 157, 0.2);
+    --shadow-glow: 0 0 40px rgba(255, 107, 157, 0.3);
+}
+
+[data-theme="pink-blue"] .orb-1 { background: #ff6b9d; opacity: 0.4; }
+[data-theme="pink-blue"] .orb-2 { background: #4fc3f7; opacity: 0.4; }
+[data-theme="pink-blue"] .orb-3 { background: #ff4081; opacity: 0.4; }
+
+[data-theme="pink-blue"] .glass-card {
+    box-shadow: var(--shadow), 0 0 30px rgba(255, 107, 157, 0.15);
+}
+
+[data-theme="pink-blue"] .glass-card:hover {
+    box-shadow: var(--shadow), var(--shadow-glow), 0 0 50px rgba(255, 107, 157, 0.25);
+    border-color: rgba(255, 107, 157, 0.4);
 }
 
 /* ── Reset & Base ────────────────────────── */
