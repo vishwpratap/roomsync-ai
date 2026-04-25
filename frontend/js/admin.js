@@ -132,26 +132,86 @@ const Admin = {
     async renderDashboard() {
         const c = Utils.$("#app-content");
         c.innerHTML = `
-        <div class="dashboard-container fade-in">
-            <div class="dash-header">
-                <div class="dash-welcome">
-                    <h2>Admin control room</h2>
-                    <p class="subtitle">Tune matching, manage users, and evolve behavioral scenarios without rebuilding the stack.</p>
+        <div class="admin-container fade-in">
+            <div class="admin-sidebar">
+                <div class="admin-brand">
+                    <h1>Admin</h1>
+                    <span class="admin-badge">Control Panel</span>
                 </div>
-                <div class="header-actions">
-                    <button class="btn btn-secondary btn-sm" onclick="Admin.renderDashboard()">Refresh</button>
-                    <button class="btn btn-secondary btn-sm" onclick="App.logout()">Logout</button>
+                <nav class="admin-nav">
+                    <button class="admin-nav-item active" data-section="overview" onclick="Admin.switchSection('overview')">
+                        <span class="nav-icon">📊</span>
+                        <span>Overview</span>
+                    </button>
+                    <button class="admin-nav-item" data-section="users" onclick="Admin.switchSection('users')">
+                        <span class="nav-icon">👥</span>
+                        <span>Users</span>
+                    </button>
+                    <button class="admin-nav-item" data-section="posts" onclick="Admin.switchSection('posts')">
+                        <span class="nav-icon">🏠</span>
+                        <span>Room Posts</span>
+                    </button>
+                    <button class="admin-nav-item" data-section="scenarios" onclick="Admin.switchSection('scenarios')">
+                        <span class="nav-icon">📝</span>
+                        <span>Scenarios</span>
+                    </button>
+                    <button class="admin-nav-item" data-section="settings" onclick="Admin.switchSection('settings')">
+                        <span class="nav-icon">⚙️</span>
+                        <span>Settings</span>
+                    </button>
+                </nav>
+                <div class="admin-footer">
+                    <button class="admin-logout-btn" onclick="App.logout()">
+                        <span>🚪</span>
+                        <span>Logout</span>
+                    </button>
                 </div>
             </div>
-            <div class="admin-grid">
-                <section class="glass-card admin-panel" id="admin-metrics"><div class="loader">Loading dashboard...</div></section>
-                <section class="glass-card admin-panel" id="admin-weights"><div class="loader">Loading weights...</div></section>
-                <section class="glass-card admin-panel admin-wide" id="admin-users"><div class="loader">Loading users...</div></section>
-                <section class="glass-card admin-panel admin-wide" id="admin-posts"><div class="loader">Loading room posts...</div></section>
-                <section class="glass-card admin-panel admin-wide" id="admin-scenarios"><div class="loader">Loading scenarios...</div></section>
+            <div class="admin-main">
+                <div class="admin-header">
+                    <h2 id="admin-section-title">Overview</h2>
+                    <button class="admin-refresh-btn" onclick="Admin.renderDashboard()">🔄 Refresh</button>
+                </div>
+                <div class="admin-content" id="admin-content">
+                    <div class="admin-section active" id="section-overview">
+                        <div class="admin-cards-grid">
+                            <div class="admin-card" id="admin-metrics"><div class="loader">Loading...</div></div>
+                            <div class="admin-card" id="admin-weights"><div class="loader">Loading...</div></div>
+                        </div>
+                    </div>
+                    <div class="admin-section" id="section-users">
+                        <div class="admin-card admin-card-full" id="admin-users"><div class="loader">Loading...</div></div>
+                    </div>
+                    <div class="admin-section" id="section-posts">
+                        <div class="admin-card admin-card-full" id="admin-posts"><div class="loader">Loading...</div></div>
+                    </div>
+                    <div class="admin-section" id="section-scenarios">
+                        <div class="admin-card admin-card-full" id="admin-scenarios"><div class="loader">Loading...</div></div>
+                    </div>
+                    <div class="admin-section" id="section-settings">
+                        <div class="admin-card admin-card-full" id="admin-settings"><div class="loader">Loading...</div></div>
+                    </div>
+                </div>
             </div>
         </div>`;
         await Promise.all([this.loadMetrics(), this.loadWeights(), this.loadUsers(), this.loadRoomPosts(), this.loadScenarios()]);
+    },
+
+    switchSection(section) {
+        document.querySelectorAll('.admin-nav-item').forEach(item => item.classList.remove('active'));
+        document.querySelector(`[data-section="${section}"]`).classList.add('active');
+        
+        document.querySelectorAll('.admin-section').forEach(sec => sec.classList.remove('active'));
+        document.getElementById(`section-${section}`).classList.add('active');
+        
+        const titles = {
+            overview: 'Overview',
+            users: 'User Management',
+            posts: 'Room Posts',
+            scenarios: 'Scenario Management',
+            settings: 'Settings'
+        };
+        document.getElementById('admin-section-title').textContent = titles[section];
     },
 
     async loadMetrics() {
@@ -159,36 +219,31 @@ const Admin = {
         try {
             const data = await Api.getAdminDashboard();
             target.innerHTML = `
-            <h3>Dashboard</h3>
-            <div class="stats-grid">
-                <div class="stat-card"><strong>${data.total_users}</strong><span>Total users</span></div>
-                <div class="stat-card"><strong>${data.total_room_posts}</strong><span>Room posts</span></div>
-                <div class="stat-card"><strong>${data.total_matches_generated}</strong><span>Matches generated</span></div>
-                <div class="stat-card"><strong>${data.analytics.average_compatibility_score}%</strong><span>Average score</span></div>
+            <h3>📊 Overview</h3>
+            <div class="admin-stats-grid">
+                <div class="admin-stat-item">
+                    <span class="stat-value">${data.total_users}</span>
+                    <span class="stat-label">Total Users</span>
+                </div>
+                <div class="admin-stat-item">
+                    <span class="stat-value">${data.total_room_posts}</span>
+                    <span class="stat-label">Room Posts</span>
+                </div>
+                <div class="admin-stat-item">
+                    <span class="stat-value">${data.total_matches_generated}</span>
+                    <span class="stat-label">Matches</span>
+                </div>
+                <div class="admin-stat-item">
+                    <span class="stat-value">${data.analytics.average_compatibility_score}%</span>
+                    <span class="stat-label">Avg Score</span>
+                </div>
             </div>
-            <div class="stats-grid compact-grid">
-                <div class="stat-card"><strong>${data.risk_distribution.LOW}</strong><span>Low risk</span></div>
-                <div class="stat-card"><strong>${data.risk_distribution.MEDIUM}</strong><span>Medium risk</span></div>
-                <div class="stat-card"><strong>${data.risk_distribution.HIGH}</strong><span>High risk</span></div>
-                <div class="stat-card"><strong>${data.analytics.high_risk_matches_percent}%</strong><span>High-risk share</span></div>
-            </div>
-            <div class="muted">Top conflict types: ${(data.analytics.most_common_conflict_types || []).map(item => `${item.type} (${item.count})`).join(", ") || 'No data yet'}</div>
             <div class="admin-actions-section">
-                <div class="admin-action-item">
-                    <button class="btn btn-danger btn-sm" onclick="Admin.cleanupDuplicatePosts()">🗑️ Cleanup Duplicate Room Posts</button>
-                    <small class="muted">Removes duplicate room posts from database (keeps oldest one per user/title/location/rent)</small>
-                </div>
-                <div class="admin-action-item">
-                    <button class="btn btn-danger btn-sm" onclick="Admin.cleanupAllDuplicates()">🔥 Strong Cleanup (By Title)</button>
-                    <small class="muted">Removes ALL posts with same title, keeps only the oldest one</small>
-                </div>
-                <div class="admin-action-item">
-                    <button class="btn btn-warning btn-sm" onclick="Admin.seedScenarios()">🌱 Re-seed Scenarios</button>
-                    <small class="muted">Re-seeds all scenarios with options (use if questionnaire shows no options)</small>
-                </div>
+                <button class="admin-action-btn" onclick="Admin.seedScenarios()">🌱 Re-seed Scenarios</button>
+                <small class="muted">Re-seeds all scenarios with options</small>
             </div>`;
         } catch (err) {
-            target.innerHTML = `<p>${err.message}</p>`;
+            target.innerHTML = `<p class="error-text">${err.message}</p>`;
         }
     },
 
@@ -222,23 +277,38 @@ const Admin = {
             const data = await fetch("https://roomsync-ai.onrender.com/admin/room-posts").then(r => r.json());
             const posts = data.posts || [];
             target.innerHTML = `
-            <div class="section-head">
-                <h3>Room Posts Management</h3>
+            <div class="admin-section-header">
+                <h3>🏠 Room Posts Management</h3>
                 <small class="muted">${posts.length} total posts</small>
             </div>
-            <div class="admin-scroll-container">
-                ${posts.map(post => `
-                    <div class="admin-item admin-post-item">
-                        <div class="admin-post-info">
-                            <strong>${post.title}</strong>
-                            <small class="muted">ID: ${post.id} | Owner: ${post.owner_name} | ₹${post.rent} | ${post.location}</small>
-                        </div>
-                        <button class="btn btn-danger btn-xs" onclick="Admin.deleteRoomPost(${post.id})">Delete</button>
-                    </div>
-                `).join("") || '<p class="muted">No room posts found.</p>'}
+            <div class="admin-table-container">
+                <table class="admin-table">
+                    <thead>
+                        <tr>
+                            <th>Title</th>
+                            <th>Owner</th>
+                            <th>Location</th>
+                            <th>Rent</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${posts.map(post => `
+                        <tr>
+                            <td><strong>${post.title}</strong></td>
+                            <td>${post.owner_name || "User"}</td>
+                            <td>${post.location}</td>
+                            <td>₹${post.rent}</td>
+                            <td>
+                                <button class="admin-table-btn danger" onclick="Admin.deleteRoomPost(${post.id})">Delete</button>
+                            </td>
+                        </tr>
+                        `).join("") || '<tr><td colspan="5" class="no-data">No room posts found</td></tr>'}
+                    </tbody>
+                </table>
             </div>`;
         } catch (err) {
-            target.innerHTML = `<p>${err.message}</p>`;
+            target.innerHTML = `<p class="error-text">${err.message}</p>`;
         }
     },
 
@@ -268,24 +338,47 @@ const Admin = {
     },
 
     async loadWeights() {
-        const target = Utils.$("#admin-weights");
+        const target = Utils.$("#admin-settings");
         try {
             const weights = await Api.getWeights();
             target.innerHTML = `
-            <h3>Weight Control</h3>
-            <p class="muted admin-copy">Recommended defaults give slightly more importance to cleanliness and behavioral traits, while keeping personality as a supporting signal.</p>
-            <form class="fields-grid admin-weight-grid" onsubmit="Admin.saveWeights(event)">
-                <div class="field"><label>Cleanliness Weight</label><input type="number" step="0.05" id="weight-cleanliness" value="${weights.cleanliness}" /><small>Most common source of day-to-day friction.</small></div>
-                <div class="field"><label>Sleep Weight</label><input type="number" step="0.05" id="weight-sleep" value="${weights.sleep}" /><small>Important, but usually manageable with clear routines.</small></div>
-                <div class="field"><label>Personality Weight</label><input type="number" step="0.05" id="weight-personality" value="${weights.personality}" /><small>Useful context, but should not overpower lifestyle fit.</small></div>
-                <div class="field"><label>Trait Weight</label><input type="number" step="0.05" id="weight-trait" value="${weights.trait}" /><small>Behavior under real scenarios should strongly influence the score.</small></div>
-                <div class="header-actions">
-                    <button class="btn btn-secondary btn-sm" type="button" onclick="Admin.applyRecommendedWeights()">Use Recommended</button>
-                    <button class="btn btn-primary btn-sm" type="submit">Update Weights</button>
-                </div>
-            </form>`;
+            <div class="admin-section-header">
+                <h3>⚙️ Settings</h3>
+            </div>
+            <div class="admin-card">
+                <h4>Weight Control</h4>
+                <p class="muted" style="margin-bottom: 20px;">Recommended defaults give slightly more importance to cleanliness and behavioral traits, while keeping personality as a supporting signal.</p>
+                <form class="admin-weight-form" onsubmit="Admin.saveWeights(event)">
+                    <div class="admin-weight-grid">
+                        <div class="admin-weight-item">
+                            <label>Cleanliness Weight</label>
+                            <input type="number" step="0.05" id="weight-cleanliness" value="${weights.cleanliness}" />
+                            <small>Most common source of day-to-day friction.</small>
+                        </div>
+                        <div class="admin-weight-item">
+                            <label>Sleep Weight</label>
+                            <input type="number" step="0.05" id="weight-sleep" value="${weights.sleep}" />
+                            <small>Important, but usually manageable with clear routines.</small>
+                        </div>
+                        <div class="admin-weight-item">
+                            <label>Personality Weight</label>
+                            <input type="number" step="0.05" id="weight-personality" value="${weights.personality}" />
+                            <small>Useful context, but should not overpower lifestyle fit.</small>
+                        </div>
+                        <div class="admin-weight-item">
+                            <label>Trait Weight</label>
+                            <input type="number" step="0.05" id="weight-trait" value="${weights.trait}" />
+                            <small>Behavior under real scenarios should strongly influence the score.</small>
+                        </div>
+                    </div>
+                    <div class="admin-weight-actions">
+                        <button type="button" class="admin-action-btn" onclick="Admin.applyRecommendedWeights()">Use Recommended</button>
+                        <button type="submit" class="admin-action-btn" style="background: var(--gradient-main); color: #fff;">Update Weights</button>
+                    </div>
+                </form>
+            </div>`;
         } catch (err) {
-            target.innerHTML = `<p>${err.message}</p>`;
+            target.innerHTML = `<p class="error-text">${err.message}</p>`;
         }
     },
 
@@ -320,100 +413,49 @@ const Admin = {
                 this.selectedUserId = users[0].id;
             }
             target.innerHTML = `
-            <div class="section-head">
-                <h3>User Management</h3>
-                <input type="text" placeholder="Search users..." value="${search}" oninput="Admin.loadUsers(this.value)" />
+            <div class="admin-section-header">
+                <h3>👥 User Management</h3>
+                <input type="text" class="admin-search-input" placeholder="Search users..." value="${search}" oninput="Admin.loadUsers(this.value)" />
             </div>
-            <div class="admin-users-workspace">
-                <div class="admin-user-list">
-                    ${users.map(user => `
-                <div class="search-item glass-card admin-user-row ${user.id === this.selectedUserId ? 'active' : ''}" data-user-id="${user.id}">
-                    <div class="search-item-info admin-user-row-info" onclick="Admin.showUser(${user.id})">
-                        <div class="admin-user-row-head">
-                            <strong>${user.name}</strong>
-                            <span class="badge badge-sm">${user.roommate_type || '-'}</span>
-                        </div>
-                        <div class="match-meta"><span>Cluster ${user.cluster_id ?? '-'}</span><span>${user.profession || '-'}</span><span>${user.gender || '-'}</span></div>
-                    </div>
-                    <div class="admin-user-row-actions">
-                        <button class="btn btn-secondary btn-xs" type="button" onclick="Admin.showUser(${user.id})">View</button>
-                        <button class="btn btn-secondary btn-xs" type="button" onclick="Admin.deleteUser(${user.id})">Delete</button>
-                    </div>
-                </div>`).join("") || '<p class="muted">No users found.</p>'}
-                </div>
-                <div id="admin-user-detail" class="admin-detail admin-detail-side">
-                    <div class="detail-card glass-card admin-user-empty-state">
-                        <h4>Select a user</h4>
-                        <p class="muted">Pick someone from the list to view their profile details, traits, and scenario answers.</p>
-                    </div>
-                </div>
+            <div class="admin-table-container">
+                <table class="admin-table">
+                    <thead>
+                        <tr>
+                            <th>Name</th>
+                            <th>Type</th>
+                            <th>Profession</th>
+                            <th>Cluster</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${users.map(user => `
+                        <tr class="${user.id === this.selectedUserId ? 'active' : ''}">
+                            <td><strong>${user.name}</strong></td>
+                            <td><span class="admin-badge-small">${user.roommate_type || '-'}</span></td>
+                            <td>${user.profession || '-'}</td>
+                            <td>${user.cluster_id ?? '-'}</td>
+                            <td>
+                                <button class="admin-table-btn" onclick="Admin.showUser(${user.id})">View</button>
+                                <button class="admin-table-btn danger" onclick="Admin.deleteUser(${user.id})">Delete</button>
+                            </td>
+                        </tr>
+                        `).join("") || '<tr><td colspan="5" class="no-data">No users found</td></tr>'}
+                    </tbody>
+                </table>
             </div>`;
-            if (this.selectedUserId) {
-                this.showUser(this.selectedUserId, false);
-            }
         } catch (err) {
-            target.innerHTML = `<p>${err.message}</p>`;
+            target.innerHTML = `<p class="error-text">${err.message}</p>`;
         }
     },
 
-    async showUser(userId, smoothScroll = true) {
+    async showUser(userId) {
         try {
             this.selectedUserId = userId;
-            Utils.$$(".admin-user-row").forEach(card => {
-                card.classList.toggle("active", Number(card.dataset.userId) === userId);
-            });
             const user = await Api.getAdminUser(userId);
-            const preferences = user.preferences || {};
-            const personality = user.personality || {};
-            const traits = user.traits || {};
-            const responses = user.responses || [];
-            Utils.$("#admin-user-detail").innerHTML = `
-            <div class="detail-card glass-card admin-user-detail-card slide-in-right">
-                <div class="admin-user-summary">
-                    <div>
-                        <h4>${user.name}</h4>
-                        <p class="muted">${user.profession || '-'} - ${user.gender || '-'} - cluster ${user.cluster_id ?? '-'}</p>
-                    </div>
-                    <span class="badge">${user.roommate_type || 'Balanced Roommate'}</span>
-                </div>
-                <div class="admin-pill-grid">
-                    <div class="admin-pill-card"><span>Age</span><strong>${user.age || '-'}</strong></div>
-                    <div class="admin-pill-card"><span>Profession</span><strong>${user.profession || '-'}</strong></div>
-                    <div class="admin-pill-card"><span>Gender</span><strong>${user.gender || '-'}</strong></div>
-                    <div class="admin-pill-card"><span>Cluster</span><strong>${user.cluster_id ?? '-'}</strong></div>
-                </div>
-                <div class="admin-user-sections">
-                    <div class="admin-mini-panel">
-                        <h5>Lifestyle Preferences</h5>
-                        <div class="admin-kv-grid">
-                            ${Object.entries(preferences).map(([key, value]) => `<div class="admin-kv-item"><span>${Admin.labelize(key)}</span><strong>${value}</strong></div>`).join("")}
-                        </div>
-                    </div>
-                    <div class="admin-mini-panel">
-                        <h5>Personality Profile</h5>
-                        <div class="admin-kv-grid">
-                            ${Object.entries(personality).map(([key, value]) => `<div class="admin-kv-item"><span>${Admin.labelize(key)}</span><strong>${value}</strong></div>`).join("")}
-                        </div>
-                    </div>
-                    <div class="admin-mini-panel">
-                        <h5>Behavior Traits</h5>
-                        <div class="admin-kv-grid">
-                            ${Object.entries(traits).map(([key, value]) => `<div class="admin-kv-item"><span>${Admin.labelize(key)}</span><strong>${value}</strong></div>`).join("")}
-                        </div>
-                    </div>
-                    <div class="admin-mini-panel">
-                        <h5>Scenario Answers</h5>
-                        <div class="admin-response-list">
-                            ${responses.length ? responses.map(item => `<div class="admin-response-item"><strong>${item.title}</strong><span>Option ${Number(item.selected_option) + 1}</span></div>`).join("") : '<p class="muted">No scenario responses recorded.</p>'}
-                        </div>
-                    </div>
-                </div>
-            </div>`;
-            if (smoothScroll && window.innerWidth < 900) {
-                Utils.$("#admin-user-detail")?.scrollIntoView({ behavior: "smooth", block: "start" });
-            }
+            alert(`User: ${user.name}\nProfession: ${user.profession || '-'}\nType: ${user.roommate_type || '-'}\nCluster: ${user.cluster_id ?? '-'}`);
         } catch (err) {
-            Utils.toast(err.message, "error");
+            alert("Failed to load user: " + err.message);
         }
     },
 
@@ -437,22 +479,37 @@ const Admin = {
         const target = Utils.$("#admin-scenarios");
         try {
             const scenarios = await Api.getAdminScenarios();
-            const active = scenarios.find(s => s.db_id === this.selectedScenarioId) || scenarios[0];
-            this.selectedScenarioId = active?.db_id || null;
             target.innerHTML = `
-            <div class="section-head">
-                <h3>Scenario Manager</h3>
-                <div class="header-actions">
-                    <button class="btn btn-secondary btn-xs" onclick="Admin.applyPresetToCurrent()">Use Category Starter</button>
-                    <button class="btn btn-primary btn-xs" onclick="Admin.newScenario()">New Scenario</button>
-                </div>
+            <div class="admin-section-header">
+                <h3>📝 Scenario Management</h3>
+                <button class="admin-action-btn" onclick="Admin.seedScenarios()">🌱 Re-seed Scenarios</button>
             </div>
-            <div class="scenario-admin-layout">
-                <div class="scenario-list-mini">${scenarios.map(s => `<button class="scenario-mini ${s.db_id === this.selectedScenarioId ? 'active' : ''}" onclick="Admin.editScenario(${s.db_id})">${s.title}</button>`).join("")}</div>
-                <div id="scenario-editor">${this.scenarioEditor(active)}</div>
+            <div class="admin-table-container">
+                <table class="admin-table">
+                    <thead>
+                        <tr>
+                            <th>Title</th>
+                            <th>Category</th>
+                            <th>Options</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${scenarios.map(s => `
+                        <tr>
+                            <td><strong>${s.title}</strong></td>
+                            <td><span class="admin-badge-small">${s.category || '-'}</span></td>
+                            <td>${s.options?.length || 0} options</td>
+                            <td>
+                                <button class="admin-table-btn" onclick="alert('Edit functionality coming soon')">Edit</button>
+                            </td>
+                        </tr>
+                        `).join("") || '<tr><td colspan="4" class="no-data">No scenarios found</td></tr>'}
+                    </tbody>
+                </table>
             </div>`;
         } catch (err) {
-            target.innerHTML = `<p>${err.message}</p>`;
+            target.innerHTML = `<p class="error-text">${err.message}</p>`;
         }
     },
 
