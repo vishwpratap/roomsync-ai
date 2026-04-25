@@ -201,7 +201,7 @@ def force_seed_demo_scenarios():
             # Insert new scenario
             print(f"[Force Seed] Inserting new scenario: {scenario['slug']}")
             scenario_id = execute_insert(
-                "INSERT INTO scenarios (slug, title, question, description, icon, category) VALUES (%s, %s, %s, %s, %s, %s)",
+                "INSERT INTO scenarios (slug, title, question, description, icon, category) VALUES (%s, %s, %s, %s, %s, %s) RETURNING id",
                 (scenario["slug"], scenario["title"], scenario["question"], scenario.get("description"), scenario.get("icon"), scenario.get("category")),
             )
             print(f"[Force Seed] Inserted scenario with ID: {scenario_id}")
@@ -211,12 +211,14 @@ def force_seed_demo_scenarios():
         for index, option in enumerate(scenario["options"]):
             try:
                 option_id = execute_insert(
-                    "INSERT INTO scenario_options (scenario_id, option_order, option_text, emoji, trait_mapping_json) VALUES (%s, %s, %s, %s, %s)",
+                    "INSERT INTO scenario_options (scenario_id, option_order, option_text, emoji, trait_mapping_json) VALUES (%s, %s, %s, %s, %s) RETURNING id",
                     (scenario_id, index, option["text"], option.get("emoji"), json.dumps(option["traits"])),
                 )
                 print(f"[Force Seed] Inserted option {index} with ID: {option_id}")
             except Exception as e:
                 print(f"[Force Seed] Error inserting option {index}: {str(e)}")
+                import traceback
+                traceback.print_exc()
     
     return {"message": "Demo scenarios seeded successfully"}
 
