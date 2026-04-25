@@ -542,6 +542,7 @@ const Admin = {
     },
 
     async newScenario() {
+        console.log("Opening new scenario form");
         const target = Utils.$("#admin-scenarios");
         const options = [
             { text: "", emoji: "", index: 0 },
@@ -607,13 +608,14 @@ const Admin = {
 
     async createScenario(e) {
         e.preventDefault();
+        console.log("Creating new scenario");
         try {
             const options = [];
             for (let i = 0; i < 4; i++) {
                 const text = Utils.$(`#option-text-${i}`).value;
                 const emoji = Utils.$(`#option-emoji-${i}`).value;
                 if (text.trim()) {
-                    options.push({ text, emoji });
+                    options.push({ text, emoji, traits: {} });
                 }
             }
             
@@ -627,10 +629,13 @@ const Admin = {
                 options: options
             };
             
+            console.log("Scenario data to create:", scenarioData);
             await Api.createScenario(scenarioData);
+            console.log("Scenario created successfully");
             Utils.toast("Scenario created successfully", "success");
             this.loadScenarios();
         } catch (err) {
+            console.error("Failed to create scenario:", err);
             Utils.toast("Failed to create scenario: " + err.message, "error");
         }
     },
@@ -726,7 +731,7 @@ const Admin = {
                 const text = Utils.$(`#option-text-${i}`).value;
                 const emoji = Utils.$(`#option-emoji-${i}`).value;
                 if (text.trim()) {
-                    options.push({ text, emoji });
+                    options.push({ text, emoji, traits: {} });
                 }
             }
             
@@ -742,6 +747,7 @@ const Admin = {
             
             console.log("Scenario data to save:", scenarioData);
             await Api.updateScenario(scenarioId, scenarioData);
+            console.log("Scenario saved successfully");
             Utils.toast("Scenario updated successfully", "success");
             this.loadScenarios();
         } catch (err) {
