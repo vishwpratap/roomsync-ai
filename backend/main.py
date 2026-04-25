@@ -951,24 +951,18 @@ async def create_room_post(
 
 @app.get("/room-posts/{user_id}")
 async def list_room_posts(user_id: int):
-    try:
-        user, user_preferences, user_personality, user_traits = _get_user_data(user_id)
-    except HTTPException:
-        # If user hasn't completed profile, return posts without compatibility scores
-        rows = execute_query("SELECT rp.id, rp.user_id, rp.title, rp.description, rp.rent, rp.location, rp.gender_preference, rp.lifestyle_preference, rp.personality_preference, rp.image_url, rp.created_at, u.name AS owner_name, u.roommate_type AS owner_roommate_type FROM room_posts rp JOIN users u ON u.id = rp.user_id WHERE rp.user_id != %s GROUP BY rp.id, rp.user_id, rp.title, rp.description, rp.rent, rp.location, rp.gender_preference, rp.lifestyle_preference, rp.personality_preference, rp.image_url, rp.created_at, u.name, u.roommate_type ORDER BY rp.created_at DESC", (user_id,), fetch_all=True) or []
-        return [_serialize_room_post(row) for row in rows]
-
-    rows = execute_query("SELECT rp.id, rp.user_id, rp.title, rp.description, rp.rent, rp.location, rp.gender_preference, rp.lifestyle_preference, rp.personality_preference, rp.image_url, rp.created_at, u.name AS owner_name, u.roommate_type AS owner_roommate_type FROM room_posts rp JOIN users u ON u.id = rp.user_id WHERE rp.user_id != %s GROUP BY rp.id, rp.user_id, rp.title, rp.description, rp.rent, rp.location, rp.gender_preference, rp.lifestyle_preference, rp.personality_preference, rp.image_url, rp.created_at, u.name, u.roommate_type ORDER BY rp.created_at DESC", (user_id,), fetch_all=True) or []
-    posts = []
-    for row in rows:
-        post = _serialize_room_post(row)
-        try:
-            posts.append(_build_room_match_payload(user, user_preferences, user_personality, user_traits, post))
-        except HTTPException:
-            # If room owner hasn't completed profile, return post without compatibility
-            posts.append(post)
-    posts.sort(key=lambda item: item.get("compatibility", {}).get("total_score", 0), reverse=True)
-    return posts
+    # Simple query: get all posts except this user's, then fetch user info separately
+    posts = execute_query("SELECT * FROM room_posts WHERE user_id != %s ORDER BY created_at DESC", (user_id,), fetch_all=True) or []
+    result = []
+    for post in posts:
+        user = execute_query("SELECT name, roommate_type FROM users WHERE id=%s", (post["user_id"],), fetch_one=True)
+        if user:
+            post["owner_name"] = user["name"]
+            post["owner_roommate_type"] = user.get("roommate_type")
+        serialized = _serialize_room_post(post)
+        result.append(serialized)
+    print(f"[Browse Rooms Debug] User {user_id}: returning {len(result)} posts")
+    return result
 
 
 @app.get("/room-post/{post_id}")
@@ -990,8 +984,17 @@ async def get_room_post(post_id: int, user_id: Optional[int] = Query(default=Non
 
 @app.get("/my-room-posts/{user_id}")
 async def my_room_posts(user_id: int):
-    rows = execute_query("SELECT rp.id, rp.user_id, rp.title, rp.description, rp.rent, rp.location, rp.gender_preference, rp.lifestyle_preference, rp.personality_preference, rp.image_url, rp.created_at, u.name AS owner_name, u.roommate_type AS owner_roommate_type FROM room_posts rp JOIN users u ON u.id = rp.user_id WHERE rp.user_id=%s GROUP BY rp.id, rp.user_id, rp.title, rp.description, rp.rent, rp.location, rp.gender_preference, rp.lifestyle_preference, rp.personality_preference, rp.image_url, rp.created_at, u.name, u.roommate_type ORDER BY rp.created_at DESC", (user_id,), fetch_all=True) or []
-    return [_serialize_room_post(row) for row in rows]
+    # Simple query: get posts for this user, then fetch user info separately
+    posts = execute_query("SELECT * FROM room_posts WHERE user_id=%s ORDER BY created_at DESC", (user_id,), fetch_all=True) or []
+    result = []
+    for post in posts:
+        user = execute_query("SELECT name, roommate_type FROM users WHERE id=%s", (post["user_id"],), fetch_one=True)
+        if user:
+            post["owner_name"] = user["name"]
+            post["owner_roommate_type"] = user.get("roommate_type")
+        result.append(_serialize_room_post(post))
+    print(f"[My Posts Debug] User {user_id}: returning {len(result)} posts")
+    return result
 
 
 @app.post("/room-post/{post_id}/request")

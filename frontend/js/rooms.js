@@ -37,12 +37,23 @@ const Rooms = {
 
         try {
             const posts = await Api.getRoomPosts(session.user_id);
+            console.log("[Browse Rooms] Received posts:", posts);
+            // Deduplicate by post ID
+            const uniquePosts = [];
+            const seenIds = new Set();
+            for (const post of posts) {
+                if (!seenIds.has(post.id)) {
+                    seenIds.add(post.id);
+                    uniquePosts.push(post);
+                }
+            }
+            console.log("[Browse Rooms] Unique posts:", uniquePosts);
             const grid = Utils.$("#room-grid");
-            if (!posts.length) {
+            if (!uniquePosts.length) {
                 grid.innerHTML = '<div class="empty-state"><p>No room posts yet. You could absolutely be the first one here.</p></div>';
                 return;
             }
-            grid.innerHTML = posts.map(post => this.roomCard(post)).join("");
+            grid.innerHTML = uniquePosts.map(post => this.roomCard(post)).join("");
         } catch (err) {
             Utils.$("#room-grid").innerHTML = `<div class="empty-state"><p>${err.message}</p></div>`;
         }
@@ -375,11 +386,22 @@ const Rooms = {
         const session = Utils.getSession();
         try {
             const posts = await Api.getMyRoomPosts(session.user_id);
-            if (!posts.length) {
+            console.log("[My Posts] Received posts:", posts);
+            // Deduplicate by post ID
+            const uniquePosts = [];
+            const seenIds = new Set();
+            for (const post of posts) {
+                if (!seenIds.has(post.id)) {
+                    seenIds.add(post.id);
+                    uniquePosts.push(post);
+                }
+            }
+            console.log("[My Posts] Unique posts:", uniquePosts);
+            if (!uniquePosts.length) {
                 grid.innerHTML = '<div class="empty-state"><p>You haven\'t created any room posts yet.</p><button class="btn btn-primary btn-sm" onclick="Rooms.renderCreate()">Create Your First Post</button></div>';
                 return;
             }
-            grid.innerHTML = posts.map(post => this.myPostCard(post)).join("");
+            grid.innerHTML = uniquePosts.map(post => this.myPostCard(post)).join("");
         } catch (err) {
             grid.innerHTML = `<div class="empty-state"><p>${err.message}</p></div>`;
         }
