@@ -77,6 +77,48 @@ DEFAULT_SCENARIOS = [
             {"text": "This needs to change right away", "emoji": "⚠️", "traits": {"flexibility": 1, "noise_tolerance": 1, "conflict_style": 1}},
         ],
     },
+    {
+        "slug": "bathroom_schedule",
+        "title": "Bathroom Rush Hour",
+        "question": "You both need to get ready at 8 AM for work/school. How do you handle the bathroom situation?",
+        "description": "Morning routines can make or break the day.",
+        "icon": "🚿",
+        "category": "routine",
+        "options": [
+            {"text": "Wake up earlier to avoid conflict", "emoji": "⏰", "traits": {"flexibility": 5, "planning": 5, "conflict_style": 5}},
+            {"text": "Alternate days - fair is fair", "emoji": "📅", "traits": {"flexibility": 3, "planning": 4, "conflict_style": 3}},
+            {"text": "Discuss and create a schedule", "emoji": "📝", "traits": {"flexibility": 2, "planning": 3, "conflict_style": 2}},
+            {"text": "I need my time - they can adjust", "emoji": "😤", "traits": {"flexibility": 1, "planning": 2, "conflict_style": 1}},
+        ],
+    },
+    {
+        "slug": "shared_expenses",
+        "title": "Bill Splitting",
+        "question": "Your roommate forgets to pay their share of the electricity bill for the second month. What do you do?",
+        "description": "Money matters can strain even the best friendships.",
+        "icon": "💰",
+        "category": "financial",
+        "options": [
+            {"text": "Pay it for them - no big deal", "emoji": "💸", "traits": {"flexibility": 5, "conflict_style": 5, "trust": 5}},
+            {"text": "Remind them gently, but don't stress", "emoji": "🤝", "traits": {"flexibility": 3, "conflict_style": 3, "trust": 3}},
+            {"text": "Set up automatic payments together", "emoji": "📱", "traits": {"flexibility": 2, "conflict_style": 2, "trust": 2}},
+            {"text": "This is unacceptable - need a serious talk", "emoji": "😠", "traits": {"flexibility": 1, "conflict_style": 1, "trust": 1}},
+        ],
+    },
+    {
+        "slug": "study_focus",
+        "title": "Study Time",
+        "question": "You have an important exam tomorrow. Your roommate wants to watch a movie in the living room. What happens?",
+        "description": "Focus needs and social balance are key.",
+        "icon": "📚",
+        "category": "routine",
+        "options": [
+            {"text": "Study at the library - they can enjoy their time", "emoji": "🏛️", "traits": {"flexibility": 5, "conflict_style": 5, "social_tolerance": 4}},
+            {"text": "Ask them to use headphones, stay in the room", "emoji": "🎧", "traits": {"flexibility": 3, "conflict_style": 3, "social_tolerance": 3}},
+            {"text": "Suggest they watch it another day", "emoji": "📅", "traits": {"flexibility": 2, "conflict_style": 2, "social_tolerance": 2}},
+            {"text": "I need quiet - they need to leave", "emoji": "🚫", "traits": {"flexibility": 1, "conflict_style": 1, "social_tolerance": 1}},
+        ],
+    },
 ]
 
 
