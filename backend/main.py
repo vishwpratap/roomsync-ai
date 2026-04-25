@@ -898,19 +898,25 @@ async def create_room_post(
     gender_preference: str = Form("Any"),
     images: list[UploadFile] = File(default=[]),
 ):
-    user = execute_query("SELECT id FROM users WHERE id=%s", (user_id,), fetch_one=True)
-    if not user:
-        raise HTTPException(status_code=404, detail="User not found")
-    image_urls = _save_uploaded_images(images)
-    primary_image = image_urls[0] if image_urls else None
-    post_id = execute_insert(
-        "INSERT INTO room_posts (user_id, title, description, rent, location, gender_preference, lifestyle_preference, personality_preference, image_url) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)",
-        (user_id, title, description, rent, location, gender_preference, json.dumps({}), json.dumps({}), primary_image),
-    )
-    for image_url in image_urls:
-        execute_insert("INSERT INTO room_images (post_id, image_url) VALUES (%s, %s)", (post_id, image_url))
-    row = execute_query("SELECT rp.*, u.name AS owner_name, u.roommate_type AS owner_roommate_type FROM room_posts rp JOIN users u ON u.id = rp.user_id WHERE rp.id=%s", (post_id,), fetch_one=True)
-    return {"message": "Room post created successfully", "post": _serialize_room_post(row)}
+    try:
+        user = execute_query("SELECT id FROM users WHERE id=%s", (user_id,), fetch_one=True)
+        if not user:
+            raise HTTPException(status_code=404, detail="User not found")
+        image_urls = _save_uploaded_images(images)
+        primary_image = image_urls[0] if image_urls else None
+        post_id = execute_insert(
+            "INSERT INTO room_posts (user_id, title, description, rent, location, gender_preference, lifestyle_preference, personality_preference, image_url) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)",
+            (user_id, title, description, rent, location, gender_preference, json.dumps({}), json.dumps({}), primary_image),
+        )
+        for image_url in image_urls:
+            execute_insert("INSERT INTO room_images (post_id, image_url) VALUES (%s, %s)", (post_id, image_url))
+        row = execute_query("SELECT rp.*, u.name AS owner_name, u.roommate_type AS owner_roommate_type FROM room_posts rp JOIN users u ON u.id = rp.user_id WHERE rp.id=%s", (post_id,), fetch_one=True)
+        return {"message": "Room post created successfully", "post": _serialize_room_post(row)}
+    except HTTPException:
+        raise
+    except Exception as e:
+        print(f"[Create Room Post Error] {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Failed to create room post: {str(e)}")
 
 
 @app.get("/room-posts/{user_id}")
