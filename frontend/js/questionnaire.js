@@ -18,11 +18,28 @@ const Questionnaire = {
 
         try {
             this.scenarios = await Api.getScenarios();
+            console.log("[Questionnaire] Loaded scenarios:", this.scenarios);
+            console.log("[Questionnaire] Number of scenarios:", this.scenarios.length);
+
+            if (!this.scenarios || this.scenarios.length === 0) {
+                c.innerHTML = '<div class="questionnaire-container fade-in"><div class="empty-state"><p>No scenarios available. Please contact support.</p></div>';
+                return;
+            }
+
+            // Check if scenarios have options
+            const hasOptions = this.scenarios.every(s => s.options && s.options.length > 0);
+            if (!hasOptions) {
+                console.error("[Questionnaire] Scenarios missing options:", this.scenarios);
+                c.innerHTML = '<div class="questionnaire-container fade-in"><div class="empty-state"><p>Scenarios are missing options. Please contact support.</p></div>';
+                return;
+            }
+
             // totalSteps = 1 (basic info) + scenarios.length + 1 (review)
             this.totalSteps = 1 + this.scenarios.length + 1;
             this.renderShell();
             this.renderStep();
         } catch (err) {
+            console.error("[Questionnaire] Error loading scenarios:", err);
             Utils.toast("Failed to load scenarios: " + err.message, "error");
         }
     },
@@ -97,6 +114,9 @@ const Questionnaire = {
     },
 
     renderScenario(body, scenario) {
+        console.log("[Questionnaire] Rendering scenario:", scenario);
+        console.log("[Questionnaire] Scenario options:", scenario.options);
+
         const selected = this.responses[scenario.id];
         body.innerHTML = `
         <div class="step-content scenario-step fade-in">
@@ -106,14 +126,14 @@ const Questionnaire = {
                 <p class="scenario-desc">${scenario.description}</p>
             </div>
             <div class="scenario-options">
-                ${scenario.options.map((opt, i) => `
+                ${scenario.options && scenario.options.length > 0 ? scenario.options.map((opt, i) => `
                     <div class="scenario-option ${selected === i ? 'selected' : ''}"
                          onclick="Questionnaire.selectOption('${scenario.id}', ${i})" id="opt-${scenario.id}-${i}">
                         <span class="option-emoji">${opt.emoji}</span>
                         <span class="option-text">${opt.text}</span>
                         <span class="option-check">${selected === i ? '✓' : ''}</span>
                     </div>
-                `).join("")}
+                `).join("") : '<p class="muted">No options available for this scenario.</p>'}
             </div>
         </div>`;
     },

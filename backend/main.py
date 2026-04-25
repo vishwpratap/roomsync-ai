@@ -775,6 +775,22 @@ async def list_scenarios():
     return get_all_scenarios()
 
 
+@app.get("/debug-scenarios")
+async def debug_scenarios():
+    """Debug endpoint to check scenarios in database"""
+    try:
+        scenarios = execute_query("SELECT id, slug, title FROM scenarios ORDER BY id", fetch_all=True) or []
+        options = execute_query("SELECT id, scenario_id, option_text FROM scenario_options ORDER BY scenario_id, option_order", fetch_all=True) or []
+        return {
+            "total_scenarios": len(scenarios),
+            "total_options": len(options),
+            "scenarios": scenarios,
+            "options": options
+        }
+    except Exception as e:
+        return {"error": str(e)}
+
+
 @app.post("/add-user")
 async def add_user(data: UserProfileInput):
     user = execute_query("SELECT id FROM users WHERE id=%s", (data.user_id,), fetch_one=True)
