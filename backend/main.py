@@ -6,6 +6,7 @@ import json
 import os
 import shutil
 import uuid
+import base64
 import bcrypt
 from collections import Counter
 from typing import Optional
@@ -76,6 +77,34 @@ async def init_db():
     return {"message": "Database schema and seed data are ready."}
 
 
+@app.get("/debug-posts")
+async def debug_posts():
+    """Debug endpoint to check room posts in database"""
+    try:
+        posts = execute_query("SELECT id, user_id, title, location, rent, image_url FROM room_posts ORDER BY id", fetch_all=True) or []
+        images = execute_query("SELECT id, post_id, image_url FROM room_images ORDER BY id", fetch_all=True) or []
+        return {
+            "total_posts": len(posts),
+            "total_images": len(images),
+            "posts": posts,
+            "images": images
+        }
+    except Exception as e:
+        return {"error": str(e)}
+
+
+@app.get("/debug-uploads")
+async def debug_uploads():
+    """Debug endpoint to check uploads directory"""
+    try:
+        if not os.path.exists(UPLOADS_DIR):
+            return {"exists": False, "path": UPLOADS_DIR, "files": []}
+        files = os.listdir(UPLOADS_DIR)
+        return {"exists": True, "path": UPLOADS_DIR, "file_count": len(files), "files": files[:20]}
+    except Exception as e:
+        return {"error": str(e)}
+
+
 @app.post("/cleanup-duplicate-posts")
 async def cleanup_duplicate_posts():
     """Delete duplicate room posts (keep only the oldest one per user/title)"""
@@ -110,32 +139,27 @@ async def cleanup_duplicate_posts():
         raise HTTPException(status_code=500, detail=f"Failed to cleanup duplicates: {str(e)}")
 
 
-@app.get("/debug-uploads")
-async def debug_uploads():
-    """Debug endpoint to check uploads directory"""
+@app.post("/cleanup-orphaned-images")
+async def cleanup_orphaned_images():
+    """Delete image references that point to non-existent files (ephemeral storage issue)"""
     try:
-        if not os.path.exists(UPLOADS_DIR):
-            return {"exists": False, "path": UPLOADS_DIR, "files": []}
-        files = os.listdir(UPLOADS_DIR)
-        return {"exists": True, "path": UPLOADS_DIR, "file_count": len(files), "files": files[:20]}
+        # Get all image URLs from database
+        images = execute_query("SELECT id, post_id, image_url FROM room_images", fetch_all=True) or []
+        orphaned_ids = []
+        for img in images:
+            url = img["image_url"]
+            # Check if it's a file path (not base64)
+            if url and url.startswith("/uploads/"):
+                filename = url.replace("/uploads/", "")
+                filepath = os.path.join(UPLOADS_DIR, filename)
+                if not os.path.exists(filepath):
+                    orphaned_ids.append(img["id"])
+        # Delete orphaned image references
+        if orphaned_ids:
+            execute_query(f"DELETE FROM room_images WHERE id IN ({','.join(map(str, orphaned_ids))})")
+        return {"message": f"Deleted {len(orphaned_ids)} orphaned image references", "deleted_ids": orphaned_ids}
     except Exception as e:
-        return {"error": str(e)}
-
-
-@app.get("/debug-posts")
-async def debug_posts():
-    """Debug endpoint to check room posts in database"""
-    try:
-        posts = execute_query("SELECT id, user_id, title, location, rent, image_url FROM room_posts ORDER BY id", fetch_all=True) or []
-        images = execute_query("SELECT id, post_id, image_url FROM room_images ORDER BY id", fetch_all=True) or []
-        return {
-            "total_posts": len(posts),
-            "total_images": len(images),
-            "posts": posts,
-            "images": images
-        }
-    except Exception as e:
-        return {"error": str(e)}
+        raise HTTPException(status_code=500, detail=f"Failed to cleanup orphaned images: {str(e)}")
 
 
 @app.post("/cleanup-incomplete-profiles")
@@ -588,7 +612,7 @@ def _build_room_match_payload(user, user_preferences, user_personality, user_tra
 
 
 def _save_uploaded_images(files: list[UploadFile]) -> list[str]:
-    image_urls = []
+    image_data_list = []
     print(f"[Image Upload] Processing {len(files) if files else 0} files")
     for upload in files:
         if not upload or not upload.filename:
@@ -598,15 +622,13 @@ def _save_uploaded_images(files: list[UploadFile]) -> list[str]:
         if extension not in {".jpg", ".jpeg", ".png", ".webp", ".gif"}:
             print(f"[Image Upload] Skipping invalid extension: {extension}")
             continue
-        filename = f"{uuid.uuid4().hex}{extension}"
-        destination = os.path.join(UPLOADS_DIR, filename)
-        print(f"[Image Upload] Saving {upload.filename} to {destination}")
-        with open(destination, "wb") as buffer:
-            shutil.copyfileobj(upload.file, buffer)
-        image_urls.append(f"/uploads/{filename}")
-        print(f"[Image Upload] Saved image URL: /uploads/{filename}")
-    print(f"[Image Upload] Total saved: {len(image_urls)} images")
-    return image_urls
+        # Read file content and convert to base64
+        content = upload.file.read()
+        base64_data = base64.b64encode(content).decode('utf-8')
+        image_data_list.append(f"data:image/{extension[1:]};base64,{base64_data}")
+        print(f"[Image Upload] Saved image as base64, size: {len(base64_data)} chars")
+    print(f"[Image Upload] Total saved: {len(image_data_list)} images")
+    return image_data_list
 
 
 def _analytics_snapshot():
