@@ -145,7 +145,7 @@ async def cleanup_all_duplicates():
     try:
         # Get all posts grouped by title
         posts = execute_query("SELECT id, user_id, title FROM room_posts ORDER BY id", fetch_all=True) or []
-        
+
         # Group by title to find duplicates
         title_to_ids = {}
         for post in posts:
@@ -153,21 +153,44 @@ async def cleanup_all_duplicates():
             if title not in title_to_ids:
                 title_to_ids[title] = []
             title_to_ids[title].append(post["id"])
-        
+
         # Find IDs to delete (keep only the first/oldest for each title)
         ids_to_delete = []
         for title, ids in title_to_ids.items():
             if len(ids) > 1:
                 # Keep the first (oldest), delete the rest
                 ids_to_delete.extend(ids[1:])
-        
+
         # Delete the duplicate posts
         if ids_to_delete:
             execute_query(f"DELETE FROM room_posts WHERE id IN ({','.join(map(str, ids_to_delete))})")
-        
+
         return {"message": f"Deleted {len(ids_to_delete)} duplicate posts", "deleted_ids": ids_to_delete}
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to cleanup all duplicates: {str(e)}")
+
+
+@app.get("/admin/room-posts")
+async def admin_list_room_posts():
+    """List all room posts for admin management"""
+    try:
+        posts = execute_query("SELECT rp.*, u.name AS owner_name FROM room_posts rp JOIN users u ON u.id = rp.user_id ORDER BY rp.created_at DESC", fetch_all=True) or []
+        return {"posts": posts}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to fetch posts: {str(e)}")
+
+
+@app.delete("/admin/room-posts/{post_id}")
+async def admin_delete_room_post(post_id: int):
+    """Delete a room post (admin only)"""
+    try:
+        # Delete associated images first
+        execute_query("DELETE FROM room_images WHERE post_id=%s", (post_id,))
+        # Delete the post
+        execute_query("DELETE FROM room_posts WHERE id=%s", (post_id,))
+        return {"message": f"Post {post_id} deleted successfully"}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to delete post: {str(e)}")
 
 
 @app.post("/cleanup-orphaned-images")

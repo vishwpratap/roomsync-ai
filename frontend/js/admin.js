@@ -147,10 +147,11 @@ const Admin = {
                 <section class="glass-card admin-panel" id="admin-metrics"><div class="loader">Loading dashboard...</div></section>
                 <section class="glass-card admin-panel" id="admin-weights"><div class="loader">Loading weights...</div></section>
                 <section class="glass-card admin-panel admin-wide" id="admin-users"><div class="loader">Loading users...</div></section>
+                <section class="glass-card admin-panel admin-wide" id="admin-posts"><div class="loader">Loading room posts...</div></section>
                 <section class="glass-card admin-panel admin-wide" id="admin-scenarios"><div class="loader">Loading scenarios...</div></section>
             </div>
         </div>`;
-        await Promise.all([this.loadMetrics(), this.loadWeights(), this.loadUsers(), this.loadScenarios()]);
+        await Promise.all([this.loadMetrics(), this.loadWeights(), this.loadUsers(), this.loadRoomPosts(), this.loadScenarios()]);
     },
 
     async loadMetrics() {
@@ -205,6 +206,45 @@ const Admin = {
             this.loadMetrics();
         } catch (err) {
             alert("Failed to cleanup: " + err.message);
+        }
+    },
+
+    async loadRoomPosts() {
+        const target = Utils.$("#admin-posts");
+        try {
+            const data = await fetch("https://roomsync-ai.onrender.com/admin/room-posts").then(r => r.json());
+            const posts = data.posts || [];
+            target.innerHTML = `
+            <div class="section-head">
+                <h3>Room Posts Management</h3>
+                <small class="muted">${posts.length} total posts</small>
+            </div>
+            <div style="max-height:400px; overflow-y:auto;">
+                ${posts.map(post => `
+                    <div class="admin-item" style="padding:12px; border-bottom:1px solid rgba(255,255,255,0.1); display:flex; justify-content:space-between; align-items:center;">
+                        <div>
+                            <strong>${post.title}</strong>
+                            <br><small class="muted">ID: ${post.id} | Owner: ${post.owner_name} | ₹${post.rent} | ${post.location}</small>
+                        </div>
+                        <button class="btn btn-danger btn-xs" onclick="Admin.deleteRoomPost(${post.id})">Delete</button>
+                    </div>
+                `).join("") || '<p class="muted">No room posts found.</p>'}
+            </div>`;
+        } catch (err) {
+            target.innerHTML = `<p>${err.message}</p>`;
+        }
+    },
+
+    async deleteRoomPost(postId) {
+        if (!confirm("Delete this room post? This action cannot be undone.")) return;
+        try {
+            const result = await fetch(`https://roomsync-ai.onrender.com/admin/room-posts/${postId}`, { method: "DELETE" });
+            const data = await result.json();
+            alert(data.message);
+            this.loadRoomPosts();
+            this.loadMetrics();
+        } catch (err) {
+            alert("Failed to delete post: " + err.message);
         }
     },
 
