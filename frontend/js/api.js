@@ -88,13 +88,12 @@ const Api = {
     // Friend Request APIs
     async sendFriendRequest(receiverId) {
         const session = Utils.getSession();
-        const res = await fetch(`${API_BASE}/friend-requests`, {
+        const res = await fetch(`${API_BASE}/friend-requests?receiver_id=${receiverId}`, {
             method: "POST",
             headers: {
                 "Content-Type": "application/json",
                 "X-User-Id": String(session.user_id)
-            },
-            body: JSON.stringify({ receiver_id: receiverId })
+            }
         });
         const data = await res.json();
         if (!res.ok) throw new Error(data.detail || "Request failed");
