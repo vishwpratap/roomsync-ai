@@ -9,11 +9,26 @@ const App = {
 
         // Handle browser back/forward navigation
         window.addEventListener("popstate", (event) => {
+            const session = Utils.getSession();
+            if (!session) {
+                this.navigate("auth", null, false);
+                return;
+            }
+            
             if (event.state) {
                 this.navigate(event.state.view, event.state.payload, false);
             } else {
-                // If no state, go to auth
-                this.navigate("auth", null, false);
+                // If no state, try to restore from localStorage or go to dashboard
+                if (session.role === "admin") {
+                    this.navigate("admin-dashboard", null, false);
+                } else if (session.has_profile) {
+                    if (Dashboard.restorePageState()) return;
+                    if (Rooms.restorePageState()) return;
+                    if (Chat.restorePageState()) return;
+                    this.navigate("dashboard", null, false);
+                } else {
+                    this.navigate("questionnaire", null, false);
+                }
             }
         });
 
