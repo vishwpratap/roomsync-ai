@@ -142,8 +142,62 @@ const Dashboard = {
                     <span class="badge badge-sm">${u.roommate_type || "-"}</span>
                     <div class="match-meta"><span>${u.age || "-"} yrs</span><span>${u.profession || "-"}</span></div>
                 </div>
-                <button class="btn btn-primary btn-xs" onclick="Dashboard.checkCompatibility(${session.user_id}, ${u.id})">Check Compatibility</button>
+                <div class="search-item-actions">
+                    <button class="btn btn-secondary btn-xs" onclick="Dashboard.showUserDetail(${u.id})">View</button>
+                    <button class="btn btn-primary btn-xs" onclick="Dashboard.checkCompatibility(${session.user_id}, ${u.id})">Check Compatibility</button>
+                </div>
             </div>`;
+    },
+
+    async showUserDetail(userId) {
+        try {
+            const user = await Api.getUser(userId);
+            const session = Utils.getSession();
+            
+            const target = Utils.$("#explore-results");
+            target.innerHTML = `
+            <div class="user-detail-view fade-in">
+                <div class="user-detail-header">
+                    <button class="btn btn-secondary btn-sm" onclick="Dashboard.loadExploreUsers()">← Back to Users</button>
+                </div>
+                <div class="user-detail-card glass-card">
+                    <div class="user-detail-profile">
+                        <div class="user-avatar">
+                            <span class="avatar-text">${user.name.charAt(0).toUpperCase()}</span>
+                        </div>
+                        <div class="user-detail-info">
+                            <h3>${user.name}</h3>
+                            <span class="badge badge-md">${user.roommate_type || "Not Set"}</span>
+                            <div class="user-detail-meta">
+                                <span>🎂 ${user.age || "-"} years</span>
+                                <span>💼 ${user.profession || "-"}</span>
+                                <span>🎓 Cluster ${user.cluster_id ?? "-"}</span>
+                            </div>
+                        </div>
+                    </div>
+                    ${user.admin_rating ? `
+                    <div class="user-admin-rating">
+                        <h4>⭐ Admin Rating</h4>
+                        <div class="rating-display">
+                            <span class="rating-stars">${'⭐'.repeat(Math.round(user.admin_rating))}</span>
+                            <span class="rating-score">${user.admin_rating}/5</span>
+                        </div>
+                    </div>
+                    ` : ''}
+                    ${user.admin_thoughts ? `
+                    <div class="user-admin-thoughts">
+                        <h4>📝 Admin Thoughts</h4>
+                        <p>${user.admin_thoughts}</p>
+                    </div>
+                    ` : ''}
+                    <div class="user-detail-actions">
+                        <button class="btn btn-primary btn-md" onclick="Dashboard.checkCompatibility(${session.user_id}, ${user.id})">Check Compatibility</button>
+                    </div>
+                </div>
+            </div>`;
+        } catch (err) {
+            alert("Failed to load user details: " + err.message);
+        }
     },
 
     async checkCompatibility(userId1, userId2) {
