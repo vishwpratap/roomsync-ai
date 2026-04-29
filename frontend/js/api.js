@@ -10,6 +10,8 @@ const Api = {
         const headers = { "Content-Type": "application/json", ...extraHeaders };
         if (session?.role === "admin" && session.admin_id) {
             headers["X-Admin-Id"] = String(session.admin_id);
+        } else if (session?.user_id) {
+            headers["X-User-Id"] = String(session.user_id);
         }
         const options = { method, headers };
         if (body) options.body = JSON.stringify(body);
