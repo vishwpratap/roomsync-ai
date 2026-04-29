@@ -206,8 +206,14 @@ const Dashboard = {
             const session = Utils.getSession();
             
             // Check if already friends
-            const friends = await Api.getFriends();
-            const isFriend = friends.friends?.some(f => f.id === userId);
+            let isFriend = false;
+            try {
+                const friends = await Api.getFriends();
+                isFriend = friends.friends?.some(f => f.id === userId);
+            } catch (err) {
+                // Friends API might fail if tables don't exist yet
+                console.log("Friends check failed:", err.message);
+            }
             
             const target = Utils.$("#explore-results");
             target.innerHTML = `
