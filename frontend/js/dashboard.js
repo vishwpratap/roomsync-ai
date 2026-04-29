@@ -48,7 +48,11 @@ const Dashboard = {
                     <div class="matches-grid" id="matches-grid"><div class="loader">Loading matches...</div></div>
                 </div>
                 <div class="dash-section">
-                    <h3>🔍 Search and Compare</h3>
+                    <h3>� Friend Requests</h3>
+                    <div class="friend-requests-container" id="friend-requests"><div class="loader">Loading...</div></div>
+                </div>
+                <div class="dash-section">
+                    <h3>�� Search and Compare</h3>
                     <div class="search-bar-wrap">
                         <input type="text" id="search-input" placeholder="Search users by name..." oninput="Dashboard.search(this.value)"/>
                         <span class="search-icon">Find</span>
@@ -78,7 +82,7 @@ const Dashboard = {
             </div>
         </div>`;
         this.compareUserId = null;
-        this.loadMatches(s.user_id);
+        await Promise.all([this.loadMatches(s.user_id), this.loadFriendRequests()]);
         Chat.loadUnseenCount();
         this.savePageState('dashboard');
     },
@@ -94,6 +98,54 @@ const Dashboard = {
             grid.innerHTML = this.matches.map((m, i) => this.matchCard(m, i)).join("");
         } catch (err) {
             grid.innerHTML = `<div class="empty-state"><p>${err.message}</p></div>`;
+        }
+    },
+
+    async loadFriendRequests() {
+        const container = Utils.$("#friend-requests");
+        if (!container) return;
+        try {
+            const data = await Api.getFriendRequests();
+            const requests = data.requests || [];
+            if (!requests.length) {
+                container.innerHTML = '<p class="muted">No pending friend requests.</p>';
+                return;
+            }
+            container.innerHTML = `<div class="friend-requests-list">${requests.map(req => `
+                <div class="friend-request-card glass-card">
+                    <div class="friend-request-info">
+                        <strong>${req.name}</strong>
+                        <span class="badge badge-sm">${req.roommate_type || "-"}</span>
+                        <div class="match-meta"><span>${req.age || "-"} yrs</span><span>${req.profession || "-"}</span></div>
+                    </div>
+                    <div class="friend-request-actions">
+                        <button class="btn btn-success btn-xs" onclick="Dashboard.acceptFriendRequest(${req.id})">Accept</button>
+                        <button class="btn btn-danger btn-xs" onclick="Dashboard.rejectFriendRequest(${req.id})">Reject</button>
+                    </div>
+                </div>
+            `).join("")}</div>`;
+        } catch (err) {
+            container.innerHTML = `<p class="muted">${err.message}</p>`;
+        }
+    },
+
+    async acceptFriendRequest(requestId) {
+        try {
+            await Api.acceptFriendRequest(requestId);
+            Utils.toast("Friend request accepted", "success");
+            this.loadFriendRequests();
+        } catch (err) {
+            Utils.toast("Failed to accept request: " + err.message, "error");
+        }
+    },
+
+    async rejectFriendRequest(requestId) {
+        try {
+            await Api.rejectFriendRequest(requestId);
+            Utils.toast("Friend request rejected", "success");
+            this.loadFriendRequests();
+        } catch (err) {
+            Utils.toast("Failed to reject request: " + err.message, "error");
         }
     },
 
@@ -144,7 +196,6 @@ const Dashboard = {
                 </div>
                 <div class="search-item-actions">
                     <button class="btn btn-secondary btn-xs" onclick="Dashboard.showUserDetail(${u.id})">View</button>
-                    <button class="btn btn-primary btn-xs" onclick="Dashboard.checkCompatibility(${session.user_id}, ${u.id})">Check Compatibility</button>
                 </div>
             </div>`;
     },
@@ -153,6 +204,10 @@ const Dashboard = {
         try {
             const user = await Api.getUser(userId);
             const session = Utils.getSession();
+            
+            // Check if already friends
+            const friends = await Api.getFriends();
+            const isFriend = friends.friends?.some(f => f.id === userId);
             
             const target = Utils.$("#explore-results");
             target.innerHTML = `
@@ -191,12 +246,26 @@ const Dashboard = {
                     </div>
                     ` : ''}
                     <div class="user-detail-actions">
-                        <button class="btn btn-primary btn-md" onclick="Dashboard.checkCompatibility(${session.user_id}, ${user.id})">Check Compatibility</button>
+                        ${isFriend ? 
+                            `<button class="btn btn-success btn-md" disabled>✓ Already Friends</button>` :
+                            `<button class="btn btn-primary btn-md" onclick="Dashboard.sendFriendRequest(${userId})">Send Friend Request</button>`
+                        }
+                        <button class="btn btn-secondary btn-md" onclick="Dashboard.checkCompatibility(${session.user_id}, ${user.id})">Check Compatibility</button>
                     </div>
                 </div>
             </div>`;
         } catch (err) {
             alert("Failed to load user details: " + err.message);
+        }
+    },
+
+    async sendFriendRequest(receiverId) {
+        try {
+            await Api.sendFriendRequest(receiverId);
+            Utils.toast("Friend request sent successfully", "success");
+            this.showUserDetail(receiverId);
+        } catch (err) {
+            Utils.toast("Failed to send friend request: " + err.message, "error");
         }
     },
 

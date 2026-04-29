@@ -84,4 +84,25 @@ const Api = {
         return data;
     },
     getUnseenCount(userId) { return this.request("GET", `/unseen-count/${userId}`); },
+
+    // Friend Request APIs
+    async sendFriendRequest(receiverId) {
+        const session = Utils.getSession();
+        const res = await fetch(`${API_BASE}/friend-requests`, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                "X-User-Id": String(session.user_id)
+            },
+            body: JSON.stringify({ receiver_id: receiverId })
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.detail || "Request failed");
+        return data;
+    },
+    getFriendRequests() { return this.request("GET", "/friend-requests"); },
+    acceptFriendRequest(requestId) { return this.request("PUT", `/friend-requests/${requestId}/accept`); },
+    rejectFriendRequest(requestId) { return this.request("PUT", `/friend-requests/${requestId}/reject`); },
+    getFriends() { return this.request("GET", "/friends"); },
+    unfriendUser(friendId) { return this.request("DELETE", `/friends/${friendId}`); },
 };

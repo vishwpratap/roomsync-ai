@@ -316,6 +316,29 @@ async def setup_db():
                 IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'users' AND column_name = 'admin_thoughts') THEN
                     ALTER TABLE users ADD COLUMN admin_thoughts TEXT;
                 END IF;
+                IF NOT EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = 'friend_requests') THEN
+                    CREATE TABLE friend_requests (
+                        id SERIAL PRIMARY KEY,
+                        sender_id INTEGER NOT NULL,
+                        receiver_id INTEGER NOT NULL,
+                        status VARCHAR(30) DEFAULT 'PENDING',
+                        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                        CONSTRAINT unique_request UNIQUE (sender_id, receiver_id),
+                        FOREIGN KEY (sender_id) REFERENCES users(id) ON DELETE CASCADE,
+                        FOREIGN KEY (receiver_id) REFERENCES users(id) ON DELETE CASCADE
+                    );
+                END IF;
+                IF NOT EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = 'friendships') THEN
+                    CREATE TABLE friendships (
+                        user1_id INTEGER NOT NULL,
+                        user2_id INTEGER NOT NULL,
+                        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                        PRIMARY KEY (user1_id, user2_id),
+                        FOREIGN KEY (user1_id) REFERENCES users(id) ON DELETE CASCADE,
+                        FOREIGN KEY (user2_id) REFERENCES users(id) ON DELETE CASCADE
+                    );
+                END IF;
             END $$;
 
             -- ADMINS
@@ -438,6 +461,29 @@ async def setup_db():
                 FOREIGN KEY (post_id) REFERENCES room_posts(id) ON DELETE CASCADE,
                 FOREIGN KEY (requester_user_id) REFERENCES users(id) ON DELETE CASCADE,
                 FOREIGN KEY (owner_user_id) REFERENCES users(id) ON DELETE CASCADE
+            );
+
+            -- FRIEND REQUESTS
+            CREATE TABLE IF NOT EXISTS friend_requests (
+                id SERIAL PRIMARY KEY,
+                sender_id INTEGER NOT NULL,
+                receiver_id INTEGER NOT NULL,
+                status VARCHAR(30) DEFAULT 'PENDING',
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                CONSTRAINT unique_request UNIQUE (sender_id, receiver_id),
+                FOREIGN KEY (sender_id) REFERENCES users(id) ON DELETE CASCADE,
+                FOREIGN KEY (receiver_id) REFERENCES users(id) ON DELETE CASCADE
+            );
+
+            -- FRIENDSHIPS
+            CREATE TABLE IF NOT EXISTS friendships (
+                user1_id INTEGER NOT NULL,
+                user2_id INTEGER NOT NULL,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                PRIMARY KEY (user1_id, user2_id),
+                FOREIGN KEY (user1_id) REFERENCES users(id) ON DELETE CASCADE,
+                FOREIGN KEY (user2_id) REFERENCES users(id) ON DELETE CASCADE
             );
 
             -- MATCH LOGS
@@ -1313,12 +1359,21 @@ async def send_message(conversation_id: int = Form(...), sender_id: int = Form(.
     """Send a message in a conversation"""
     # Verify conversation exists and user is part of it
     conv = execute_query(
-        "SELECT id FROM conversations WHERE id=%s AND (user1_id=%s OR user2_id=%s)",
+        "SELECT id, user1_id, user2_id FROM conversations WHERE id=%s AND (user1_id=%s OR user2_id=%s)",
         (conversation_id, sender_id, sender_id),
         fetch_one=True
     )
     if not conv:
         raise HTTPException(status_code=404, detail="Conversation not found")
+
+    # Verify users are friends
+    friendship = execute_query(
+        "SELECT * FROM friendships WHERE (user1_id=%s AND user2_id=%s) OR (user1_id=%s AND user2_id=%s)",
+        (conv["user1_id"], conv["user2_id"], conv["user2_id"], conv["user1_id"]),
+        fetch_one=True
+    )
+    if not friendship:
+        raise HTTPException(status_code=403, detail="You can only chat with friends")
 
     message_id = execute_insert(
         "INSERT INTO messages (conversation_id, sender_id, message_content) VALUES (%s, %s, %s)",
@@ -1481,6 +1536,174 @@ async def admin_update_user_rating(user_id: int, rating: float = Form(...), thou
         raise HTTPException(status_code=404, detail="User not found")
     
     return {"message": "User rating and thoughts updated successfully", "rating": rating, "thoughts": thoughts}
+
+
+# Friend Request Endpoints
+@app.post("/friend-requests")
+async def send_friend_request(receiver_id: int, sender_id: int = Header(..., alias="X-User-Id")):
+    """Send a friend request to another user"""
+    if sender_id == receiver_id:
+        raise HTTPException(status_code=400, detail="Cannot send friend request to yourself")
+    
+    # Check if users exist
+    sender = execute_query("SELECT id FROM users WHERE id=%s", (sender_id,), fetch_one=True)
+    receiver = execute_query("SELECT id FROM users WHERE id=%s", (receiver_id,), fetch_one=True)
+    if not sender or not receiver:
+        raise HTTPException(status_code=404, detail="User not found")
+    
+    # Check if already friends
+    existing_friendship = execute_query(
+        "SELECT * FROM friendships WHERE (user1_id=%s AND user2_id=%s) OR (user1_id=%s AND user2_id=%s)",
+        (sender_id, receiver_id, receiver_id, sender_id),
+        fetch_one=True
+    )
+    if existing_friendship:
+        raise HTTPException(status_code=400, detail="Already friends with this user")
+    
+    # Check if request already exists
+    existing_request = execute_query(
+        "SELECT * FROM friend_requests WHERE sender_id=%s AND receiver_id=%s",
+        (sender_id, receiver_id),
+        fetch_one=True
+    )
+    if existing_request:
+        if existing_request["status"] == "PENDING":
+            raise HTTPException(status_code=400, detail="Friend request already sent")
+        else:
+            raise HTTPException(status_code=400, detail="Friend request already processed")
+    
+    # Create friend request
+    request_id = execute_insert(
+        "INSERT INTO friend_requests (sender_id, receiver_id, status) VALUES (%s, %s, 'PENDING') RETURNING id",
+        (sender_id, receiver_id)
+    )
+    
+    return {"message": "Friend request sent successfully", "request_id": request_id}
+
+
+@app.get("/friend-requests")
+async def get_friend_requests(user_id: int = Header(..., alias="X-User-Id")):
+    """Get pending friend requests for the current user"""
+    requests = execute_query(
+        """
+        SELECT fr.id, fr.sender_id, fr.status, fr.created_at,
+               u.name, u.age, u.profession, u.roommate_type
+        FROM friend_requests fr
+        JOIN users u ON fr.sender_id = u.id
+        WHERE fr.receiver_id=%s AND fr.status='PENDING'
+        ORDER BY fr.created_at DESC
+        """,
+        (user_id,),
+        fetch_all=True
+    ) or []
+    return {"requests": requests}
+
+
+@app.put("/friend-requests/{request_id}/accept")
+async def accept_friend_request(request_id: int, user_id: int = Header(..., alias="X-User-Id")):
+    """Accept a friend request"""
+    # Get the request
+    request = execute_query(
+        "SELECT * FROM friend_requests WHERE id=%s AND receiver_id=%s",
+        (request_id, user_id),
+        fetch_one=True
+    )
+    if not request:
+        raise HTTPException(status_code=404, detail="Friend request not found")
+    if request["status"] != "PENDING":
+        raise HTTPException(status_code=400, detail="Friend request already processed")
+    
+    # Update request status
+    execute_update(
+        "UPDATE friend_requests SET status='ACCEPTED', updated_at=CURRENT_TIMESTAMP WHERE id=%s",
+        (request_id,)
+    )
+    
+    # Create friendship (store with smaller ID first to maintain consistency)
+    user1_id = min(request["sender_id"], user_id)
+    user2_id = max(request["sender_id"], user_id)
+    execute_insert(
+        "INSERT INTO friendships (user1_id, user2_id) VALUES (%s, %s)",
+        (user1_id, user2_id)
+    )
+    
+    # Create conversation for chatting
+    existing_conv = execute_query(
+        "SELECT id FROM conversations WHERE user1_id=%s AND user2_id=%s AND post_id IS NULL",
+        (request["sender_id"], user_id),
+        fetch_one=True
+    )
+    if not existing_conv:
+        conversation_id = execute_insert(
+            "INSERT INTO conversations (user1_id, user2_id) VALUES (%s, %s) RETURNING id",
+            (request["sender_id"], user_id)
+        )
+    else:
+        conversation_id = existing_conv["id"]
+    
+    return {"message": "Friend request accepted successfully", "conversation_id": conversation_id}
+
+
+@app.put("/friend-requests/{request_id}/reject")
+async def reject_friend_request(request_id: int, user_id: int = Header(..., alias="X-User-Id")):
+    """Reject a friend request"""
+    # Get the request
+    request = execute_query(
+        "SELECT * FROM friend_requests WHERE id=%s AND receiver_id=%s",
+        (request_id, user_id),
+        fetch_one=True
+    )
+    if not request:
+        raise HTTPException(status_code=404, detail="Friend request not found")
+    if request["status"] != "PENDING":
+        raise HTTPException(status_code=400, detail="Friend request already processed")
+    
+    # Update request status
+    execute_update(
+        "UPDATE friend_requests SET status='REJECTED', updated_at=CURRENT_TIMESTAMP WHERE id=%s",
+        (request_id,)
+    )
+    
+    return {"message": "Friend request rejected successfully"}
+
+
+@app.get("/friends")
+async def get_friends(user_id: int = Header(..., alias="X-User-Id")):
+    """Get list of friends for the current user"""
+    friends = execute_query(
+        """
+        SELECT u.id, u.name, u.age, u.profession, u.roommate_type, u.cluster_id,
+               u.admin_rating, u.admin_thoughts, f.created_at as friendship_date
+        FROM friendships f
+        JOIN users u ON (f.user1_id = u.id OR f.user2_id = u.id)
+        WHERE (f.user1_id=%s OR f.user2_id=%s) AND u.id != %s
+        ORDER BY f.created_at DESC
+        """,
+        (user_id, user_id, user_id),
+        fetch_all=True
+    ) or []
+    return {"friends": friends}
+
+
+@app.delete("/friends/{friend_id}")
+async def unfriend_user(friend_id: int, user_id: int = Header(..., alias="X-User-Id")):
+    """Remove a friend"""
+    # Check if friendship exists
+    friendship = execute_query(
+        "SELECT * FROM friendships WHERE (user1_id=%s AND user2_id=%s) OR (user1_id=%s AND user2_id=%s)",
+        (user_id, friend_id, friend_id, user_id),
+        fetch_one=True
+    )
+    if not friendship:
+        raise HTTPException(status_code=404, detail="Friendship not found")
+    
+    # Delete friendship
+    execute_update(
+        "DELETE FROM friendships WHERE (user1_id=%s AND user2_id=%s) OR (user1_id=%s AND user2_id=%s)",
+        (user_id, friend_id, friend_id, user_id)
+    )
+    
+    return {"message": "Friend removed successfully"}
 
 
 @app.get("/admin/weights")
