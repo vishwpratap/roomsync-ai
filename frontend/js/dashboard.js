@@ -122,7 +122,17 @@ const Dashboard = {
                 </div>
             `).join("")}</div>`;
         } catch (err) {
-            const errorMessage = err.detail || err.message || "Unknown error";
+            console.error("Friend requests error:", err);
+            let errorMessage = "Unknown error";
+            if (typeof err === 'string') {
+                errorMessage = err;
+            } else if (err && err.detail) {
+                errorMessage = err.detail;
+            } else if (err && err.message) {
+                errorMessage = err.message;
+            } else if (err) {
+                errorMessage = JSON.stringify(err);
+            }
             container.innerHTML = `<p class="muted">Error loading requests: ${errorMessage}</p>`;
         }
     },
