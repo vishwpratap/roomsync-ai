@@ -302,8 +302,21 @@ async def setup_db():
                 password_hash VARCHAR(255) NOT NULL,
                 roommate_type VARCHAR(100) DEFAULT 'Balanced Roommate',
                 cluster_id INTEGER,
+                admin_rating NUMERIC(2,1) DEFAULT NULL CHECK (admin_rating BETWEEN 0 AND 5),
+                admin_thoughts TEXT,
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             );
+
+            -- Add new columns if they don't exist (for existing databases)
+            DO $$
+            BEGIN
+                IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'users' AND column_name = 'admin_rating') THEN
+                    ALTER TABLE users ADD COLUMN admin_rating NUMERIC(2,1) DEFAULT NULL CHECK (admin_rating BETWEEN 0 AND 5);
+                END IF;
+                IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'users' AND column_name = 'admin_thoughts') THEN
+                    ALTER TABLE users ADD COLUMN admin_thoughts TEXT;
+                END IF;
+            END $$;
 
             -- ADMINS
             CREATE TABLE IF NOT EXISTS admins (
