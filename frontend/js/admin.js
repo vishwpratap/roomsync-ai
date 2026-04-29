@@ -482,9 +482,75 @@ const Admin = {
         try {
             this.selectedUserId = userId;
             const user = await Api.getAdminUser(userId);
-            alert(`User: ${user.name}\nProfession: ${user.profession || '-'}\nType: ${user.roommate_type || '-'}\nCluster: ${user.cluster_id ?? '-'}`);
+            
+            const target = Utils.$("#admin-users");
+            target.innerHTML = `
+            <div class="admin-section-header">
+                <h3>👤 User Details</h3>
+                <button class="admin-action-btn" onclick="Admin.loadUsers()">← Back to Users</button>
+            </div>
+            <div class="admin-card">
+                <div class="admin-user-detail">
+                    <h4>${user.name}</h4>
+                    <div class="admin-user-info">
+                        <p><strong>Profession:</strong> ${user.profession || '-'}</p>
+                        <p><strong>Type:</strong> ${user.roommate_type || '-'}</p>
+                        <p><strong>Cluster:</strong> ${user.cluster_id ?? '-'}</p>
+                        <p><strong>Age:</strong> ${user.age || '-'}</p>
+                        <p><strong>Gender:</strong> ${user.gender || '-'}</p>
+                    </div>
+                </div>
+                <div class="admin-rating-section">
+                    <h4>Admin Rating & Thoughts</h4>
+                    <form class="admin-rating-form" onsubmit="Admin.saveUserRating(event, ${userId})">
+                        <div class="admin-rating-item">
+                            <label>Rating (0-5 stars)</label>
+                            <input type="number" id="admin-rating" min="0" max="5" step="0.5" value="${user.admin_rating || 0}" required />
+                            <small>Current rating: ${user.admin_rating ? user.admin_rating + ' ⭐' : 'Not rated'}</small>
+                        </div>
+                        <div class="admin-rating-item" style="grid-column: 1 / -1;">
+                            <label>Admin Thoughts</label>
+                            <textarea id="admin-thoughts" rows="4" placeholder="Enter your thoughts about this user...">${user.admin_thoughts || ''}</textarea>
+                        </div>
+                        <div class="admin-rating-actions">
+                            <button type="submit" class="admin-action-btn" style="background: var(--gradient-main); color: #fff;">Save Rating & Thoughts</button>
+                        </div>
+                    </form>
+                </div>
+            </div>`;
         } catch (err) {
             alert("Failed to load user: " + err.message);
+        }
+    },
+
+    async saveUserRating(e, userId) {
+        e.preventDefault();
+        try {
+            const rating = Utils.$("#admin-rating").value;
+            const thoughts = Utils.$("#admin-thoughts").value;
+            
+            const formData = new FormData();
+            formData.append('rating', rating);
+            formData.append('thoughts', thoughts);
+            
+            const response = await fetch(`https://roomsync-ai.onrender.com/admin/users/${userId}/rating`, {
+                method: 'PUT',
+                headers: {
+                    'X-Admin-Id': Utils.getSession().admin_id
+                },
+                body: formData
+            });
+            
+            if (!response.ok) {
+                const error = await response.json();
+                throw new Error(error.detail || 'Failed to save rating');
+            }
+            
+            const data = await response.json();
+            Utils.toast("Rating and thoughts saved successfully", "success");
+            this.showUser(userId);
+        } catch (err) {
+            Utils.toast("Failed to save rating: " + err.message, "error");
         }
     },
 

@@ -15,6 +15,8 @@ CREATE TABLE IF NOT EXISTS users (
     password_hash VARCHAR(255) NOT NULL,
     roommate_type VARCHAR(100) DEFAULT 'Balanced Roommate',
     cluster_id INT DEFAULT NULL,
+    admin_rating DECIMAL(2,1) DEFAULT NULL CHECK (admin_rating BETWEEN 0 AND 5),
+    admin_thoughts TEXT,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 

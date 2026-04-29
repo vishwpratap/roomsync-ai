@@ -163,6 +163,17 @@ const Dashboard = {
         const scoreColor = m.total_score >= 75 ? "high" : m.total_score >= 50 ? "mid" : "low";
         const highlights = (m.highlights || []).slice(0, 2).map(h => `<span class="match-highlight">+ ${h}</span>`).join("");
         const warnings = (m.warnings || []).slice(0, 1).map(w => `<span class="match-warning">! ${w}</span>`).join("");
+        const adminRatingSection = m.admin_rating ? `
+            <div class="admin-rating-display">
+                <span class="admin-rating-stars">${'⭐'.repeat(Math.round(m.admin_rating))}</span>
+                <span class="admin-rating-score">${m.admin_rating}/5</span>
+            </div>
+        ` : '';
+        const adminThoughtsSection = m.admin_thoughts ? `
+            <div class="admin-thoughts-display">
+                <strong>Admin Note:</strong> ${m.admin_thoughts}
+            </div>
+        ` : '';
         return `
         <div class="match-card glass-card slide-up" style="animation-delay:${i * 0.08}s">
             <div class="match-rank">#${i + 1}</div>
@@ -175,6 +186,8 @@ const Dashboard = {
                 <span class="badge badge-sm">${m.roommate_type || "-"}</span>
                 <div class="match-meta">${m.age ? `<span>${m.age} yrs</span>` : ""}${m.profession ? `<span>${m.profession}</span>` : ""}${m.cluster_id !== null && m.cluster_id !== undefined ? `<span>Cluster ${m.cluster_id}</span>` : ""}</div>
             </div>
+            ${adminRatingSection}
+            ${adminThoughtsSection}
             <div class="match-insights">${highlights}${warnings}</div>
             <div class="match-risk risk-${m.risk_level.toLowerCase()}">${m.risk_level} Risk</div>
             <button class="btn btn-primary btn-sm btn-full" onclick="Compatibility.show(${Utils.getSession().user_id}, ${m.user_id})">View Analysis</button>

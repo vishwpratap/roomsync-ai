@@ -627,7 +627,7 @@ def _require_admin(x_admin_id: Optional[int] = Header(default=None, alias="X-Adm
 
 
 def _get_user_data(user_id: int):
-    user = execute_query("SELECT id, name, age, profession, gender, roommate_type, cluster_id FROM users WHERE id=%s", (user_id,), fetch_one=True)
+    user = execute_query("SELECT id, name, age, profession, gender, roommate_type, cluster_id, admin_rating, admin_thoughts FROM users WHERE id=%s", (user_id,), fetch_one=True)
     if not user:
         raise HTTPException(status_code=404, detail=f"User {user_id} not found")
     preferences = execute_query("SELECT sleep, cleanliness, noise, smoking, guests, social, cooking FROM preferences WHERE user_id=%s", (user_id,), fetch_one=True)
@@ -1451,6 +1451,23 @@ async def admin_delete_user(user_id: int, admin=Depends(_require_admin)):
     if not deleted:
         raise HTTPException(status_code=404, detail="User not found")
     return {"message": "User deleted successfully"}
+
+
+@app.put("/admin/users/{user_id}/rating")
+async def admin_update_user_rating(user_id: int, rating: float = Form(...), thoughts: str = Form(""), admin=Depends(_require_admin)):
+    """Update admin rating and thoughts for a user"""
+    if rating < 0 or rating > 5:
+        raise HTTPException(status_code=400, detail="Rating must be between 0 and 5")
+    
+    updated = execute_update(
+        "UPDATE users SET admin_rating=%s, admin_thoughts=%s WHERE id=%s",
+        (rating, thoughts, user_id)
+    )
+    
+    if not updated:
+        raise HTTPException(status_code=404, detail="User not found")
+    
+    return {"message": "User rating and thoughts updated successfully", "rating": rating, "thoughts": thoughts}
 
 
 @app.get("/admin/weights")
