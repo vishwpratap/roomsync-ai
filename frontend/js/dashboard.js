@@ -19,6 +19,7 @@ const Dashboard = {
                         <button class="sidebar-item active" onclick="Dashboard.render()">🏠 Dashboard</button>
                         <button class="sidebar-item" onclick="Dashboard.renderProfile()">👤 Profile</button>
                         <button class="sidebar-item" onclick="Dashboard.renderExploreUsers()">🔍 Explore Users</button>
+                        <button class="sidebar-item" onclick="Dashboard.renderFriendRequests()">👥 Friend Requests</button>
                         <button class="sidebar-item" onclick="Rooms.renderBrowse()">🏠 Browse Rooms</button>
                         <button class="sidebar-item" onclick="Rooms.renderMyPosts()">📝 My Posts</button>
                         <button class="sidebar-item" onclick="Rooms.renderCreate()">➕ Create Post</button>
@@ -48,11 +49,7 @@ const Dashboard = {
                     <div class="matches-grid" id="matches-grid"><div class="loader">Loading matches...</div></div>
                 </div>
                 <div class="dash-section">
-                    <h3>� Friend Requests</h3>
-                    <div class="friend-requests-container" id="friend-requests"><div class="loader">Loading...</div></div>
-                </div>
-                <div class="dash-section">
-                    <h3>�� Search and Compare</h3>
+                    <h3>🔍 Search and Compare</h3>
                     <div class="search-bar-wrap">
                         <input type="text" id="search-input" placeholder="Search users by name..." oninput="Dashboard.search(this.value)"/>
                         <span class="search-icon">Find</span>
@@ -82,7 +79,7 @@ const Dashboard = {
             </div>
         </div>`;
         this.compareUserId = null;
-        await Promise.all([this.loadMatches(s.user_id), this.loadFriendRequests()]);
+        await Promise.all([this.loadMatches(s.user_id)]);
         Chat.loadUnseenCount();
         this.savePageState('dashboard');
     },
@@ -114,7 +111,7 @@ const Dashboard = {
             container.innerHTML = `<div class="friend-requests-list">${requests.map(req => `
                 <div class="friend-request-card glass-card">
                     <div class="friend-request-info">
-                        <strong>${req.name}</strong>
+                        <strong>${req.name || 'Unknown'}</strong>
                         <span class="badge badge-sm">${req.roommate_type || "-"}</span>
                         <div class="match-meta"><span>${req.age || "-"} yrs</span><span>${req.profession || "-"}</span></div>
                     </div>
@@ -125,7 +122,8 @@ const Dashboard = {
                 </div>
             `).join("")}</div>`;
         } catch (err) {
-            container.innerHTML = `<p class="muted">${err.message}</p>`;
+            const errorMessage = err.detail || err.message || "Unknown error";
+            container.innerHTML = `<p class="muted">Error loading requests: ${errorMessage}</p>`;
         }
     },
 
@@ -147,6 +145,53 @@ const Dashboard = {
         } catch (err) {
             Utils.toast("Failed to reject request: " + err.message, "error");
         }
+    },
+
+    async renderFriendRequests() {
+        const c = Utils.$("#app-content");
+        const s = Utils.getSession();
+        c.innerHTML = `
+        <div class="dashboard-container fade-in">
+            <div class="sidebar">
+                <nav class="sidebar-nav">
+                    <h4>Navigation</h4>
+                    <div class="sidebar-menu">
+                        <button class="sidebar-item" onclick="Dashboard.render()">🏠 Dashboard</button>
+                        <button class="sidebar-item" onclick="Dashboard.renderProfile()">👤 Profile</button>
+                        <button class="sidebar-item" onclick="Dashboard.renderExploreUsers()">🔍 Explore Users</button>
+                        <button class="sidebar-item active" onclick="Dashboard.renderFriendRequests()">👥 Friend Requests</button>
+                        <button class="sidebar-item" onclick="Rooms.renderBrowse()">🏠 Browse Rooms</button>
+                        <button class="sidebar-item" onclick="Rooms.renderMyPosts()">📝 My Posts</button>
+                        <button class="sidebar-item" onclick="Rooms.renderCreate()">➕ Create Post</button>
+                        <button class="sidebar-item" onclick="Chat.render()">💬 Messages <span id="chat-badge" class="chat-badge" style="display:none">0</span></button>
+                        <div class="sidebar-divider"></div>
+                        <div class="sidebar-section">
+                            <span class="sidebar-label">Theme</span>
+                            <select class="theme-selector" onchange="Utils.setTheme(this.value)">
+                                <option value="default" ${Utils.getTheme() === 'default' ? 'selected' : ''}>Default (Purple/Blue)</option>
+                                <option value="pink-blue" ${Utils.getTheme() === 'pink-blue' ? 'selected' : ''}>Pink/Blue</option>
+                            </select>
+                        </div>
+                        <button class="sidebar-item logout" onclick="App.logout()">🚪 Logout</button>
+                    </div>
+                </nav>
+            </div>
+            <div class="main-content">
+                <div class="dash-header">
+                    <div class="dash-welcome">
+                        <h2>Friend Requests</h2>
+                        <p class="dash-subtitle">Manage your friend requests and connections.</p>
+                    </div>
+                </div>
+                <div class="dash-section">
+                    <h3>👥 Pending Requests</h3>
+                    <div class="friend-requests-container" id="friend-requests"><div class="loader">Loading...</div></div>
+                </div>
+            </div>
+        </div>`;
+        await this.loadFriendRequests();
+        Chat.loadUnseenCount();
+        this.savePageState('friend-requests');
     },
 
     async loadExploreUsers() {
