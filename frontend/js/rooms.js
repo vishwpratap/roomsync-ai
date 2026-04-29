@@ -16,6 +16,7 @@ const Rooms = {
                         <button class="sidebar-item" onclick="Dashboard.render()">🏠 Dashboard</button>
                         <button class="sidebar-item" onclick="Dashboard.renderProfile()">👤 Profile</button>
                         <button class="sidebar-item" onclick="Dashboard.renderExploreUsers()">🔍 Explore Users</button>
+                        <button class="sidebar-item" onclick="Dashboard.renderFriendRequests()">👥 Friend Requests</button>
                         <button class="sidebar-item active" onclick="Rooms.renderBrowse()">🏠 Browse Rooms</button>
                         <button class="sidebar-item" onclick="Rooms.renderMyPosts()">📝 My Posts</button>
                         <button class="sidebar-item" onclick="Rooms.renderCreate()">➕ Create Post</button>
@@ -133,9 +134,19 @@ const Rooms = {
                             <button class="sidebar-item" onclick="Dashboard.render()">🏠 Dashboard</button>
                             <button class="sidebar-item" onclick="Dashboard.renderProfile()">👤 Profile</button>
                             <button class="sidebar-item" onclick="Dashboard.renderExploreUsers()">🔍 Explore Users</button>
+                            <button class="sidebar-item" onclick="Dashboard.renderFriendRequests()">👥 Friend Requests</button>
                             <button class="sidebar-item active" onclick="Rooms.renderBrowse()">🏠 Browse Rooms</button>
                             <button class="sidebar-item" onclick="Rooms.renderMyPosts()">📝 My Posts</button>
                             <button class="sidebar-item" onclick="Rooms.renderCreate()">➕ Create Post</button>
+                            <button class="sidebar-item" onclick="Chat.render()">💬 Messages <span id="chat-badge" class="chat-badge" style="display:none">0</span></button>
+                            <div class="sidebar-divider"></div>
+                            <div class="sidebar-section">
+                                <span class="sidebar-label">Theme</span>
+                                <select class="theme-selector" onchange="Utils.setTheme(this.value)">
+                                    <option value="default" ${Utils.getTheme() === 'default' ? 'selected' : ''}>Default (Purple/Blue)</option>
+                                    <option value="pink-blue" ${Utils.getTheme() === 'pink-blue' ? 'selected' : ''}>Pink/Blue</option>
+                                </select>
+                            </div>
                             <button class="sidebar-item logout" onclick="App.logout()">🚪 Logout</button>
                         </div>
                     </nav>
@@ -292,9 +303,19 @@ const Rooms = {
                             <button class="sidebar-item" onclick="Dashboard.render()">🏠 Dashboard</button>
                             <button class="sidebar-item" onclick="Dashboard.renderProfile()">👤 Profile</button>
                             <button class="sidebar-item" onclick="Dashboard.renderExploreUsers()">🔍 Explore Users</button>
+                            <button class="sidebar-item" onclick="Dashboard.renderFriendRequests()">👥 Friend Requests</button>
                             <button class="sidebar-item" onclick="Rooms.renderBrowse()">🏠 Browse Rooms</button>
                             <button class="sidebar-item active" onclick="Rooms.renderMyPosts()">📝 My Posts</button>
                             <button class="sidebar-item" onclick="Rooms.renderCreate()">➕ Create Post</button>
+                            <button class="sidebar-item" onclick="Chat.render()">💬 Messages <span id="chat-badge" class="chat-badge" style="display:none">0</span></button>
+                            <div class="sidebar-divider"></div>
+                            <div class="sidebar-section">
+                                <span class="sidebar-label">Theme</span>
+                                <select class="theme-selector" onchange="Utils.setTheme(this.value)">
+                                    <option value="default" ${Utils.getTheme() === 'default' ? 'selected' : ''}>Default (Purple/Blue)</option>
+                                    <option value="pink-blue" ${Utils.getTheme() === 'pink-blue' ? 'selected' : ''}>Pink/Blue</option>
+                                </select>
+                            </div>
                             <button class="sidebar-item logout" onclick="App.logout()">🚪 Logout</button>
                         </div>
                     </nav>
@@ -468,15 +489,25 @@ const Rooms = {
             <div class="sidebar">
                 <nav class="sidebar-nav">
                     <h4>Navigation</h4>
-                    <div class="sidebar-menu">
-                        <button class="sidebar-item" onclick="Dashboard.render()">🏠 Dashboard</button>
-                        <button class="sidebar-item" onclick="Dashboard.renderProfile()">👤 Profile</button>
-                        <button class="sidebar-item" onclick="Dashboard.renderExploreUsers()">🔍 Explore Users</button>
-                        <button class="sidebar-item" onclick="Rooms.renderBrowse()">🏠 Browse Rooms</button>
-                        <button class="sidebar-item" onclick="Rooms.renderMyPosts()">📝 My Posts</button>
-                        <button class="sidebar-item active" onclick="Rooms.renderCreate()">➕ Create Post</button>
-                        <button class="sidebar-item logout" onclick="App.logout()">🚪 Logout</button>
-                    </div>
+                        <div class="sidebar-menu">
+                            <button class="sidebar-item" onclick="Dashboard.render()">🏠 Dashboard</button>
+                            <button class="sidebar-item" onclick="Dashboard.renderProfile()">👤 Profile</button>
+                            <button class="sidebar-item" onclick="Dashboard.renderExploreUsers()">🔍 Explore Users</button>
+                            <button class="sidebar-item" onclick="Dashboard.renderFriendRequests()">👥 Friend Requests</button>
+                            <button class="sidebar-item" onclick="Rooms.renderBrowse()">🏠 Browse Rooms</button>
+                            <button class="sidebar-item" onclick="Rooms.renderMyPosts()">📝 My Posts</button>
+                            <button class="sidebar-item active" onclick="Rooms.renderCreate()">➕ Create Post</button>
+                            <button class="sidebar-item" onclick="Chat.render()">💬 Messages <span id="chat-badge" class="chat-badge" style="display:none">0</span></button>
+                            <div class="sidebar-divider"></div>
+                            <div class="sidebar-section">
+                                <span class="sidebar-label">Theme</span>
+                                <select class="theme-selector" onchange="Utils.setTheme(this.value)">
+                                    <option value="default" ${Utils.getTheme() === 'default' ? 'selected' : ''}>Default (Purple/Blue)</option>
+                                    <option value="pink-blue" ${Utils.getTheme() === 'pink-blue' ? 'selected' : ''}>Pink/Blue</option>
+                                </select>
+                            </div>
+                            <button class="sidebar-item logout" onclick="App.logout()">🚪 Logout</button>
+                        </div>
                 </nav>
             </div>
             <div class="main-content">

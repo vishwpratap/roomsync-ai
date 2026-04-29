@@ -452,8 +452,32 @@ const Dashboard = {
                 case 'explore-users':
                     this.renderExploreUsers();
                     return true;
+                case 'friend-requests':
+                    this.renderFriendRequests();
+                    return true;
                 case 'profile':
                     this.renderProfile();
+                    return true;
+                case 'rooms-browse':
+                    Rooms.renderBrowse();
+                    return true;
+                case 'rooms-detail':
+                    Rooms.renderDetail(state.data);
+                    return true;
+                case 'rooms-myposts':
+                    Rooms.renderMyPosts();
+                    return true;
+                case 'rooms-create':
+                    Rooms.renderCreate();
+                    return true;
+                case 'rooms-edit':
+                    Rooms.renderEdit(state.data);
+                    return true;
+                case 'chat-list':
+                    Chat.render();
+                    return true;
+                case 'chat-conversation':
+                    Chat.openConversation(state.data);
                     return true;
                 default:
                     return false;

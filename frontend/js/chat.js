@@ -32,10 +32,11 @@ const Chat = {
                             <button class="sidebar-item" onclick="Dashboard.render()">🏠 Dashboard</button>
                             <button class="sidebar-item" onclick="Dashboard.renderProfile()">👤 Profile</button>
                             <button class="sidebar-item" onclick="Dashboard.renderExploreUsers()">🔍 Explore Users</button>
+                            <button class="sidebar-item" onclick="Dashboard.renderFriendRequests()">👥 Friend Requests</button>
                             <button class="sidebar-item" onclick="Rooms.renderBrowse()">🏠 Browse Rooms</button>
                             <button class="sidebar-item" onclick="Rooms.renderMyPosts()">📝 My Posts</button>
                             <button class="sidebar-item" onclick="Rooms.renderCreate()">➕ Create Post</button>
-                            <button class="sidebar-item active" onclick="Chat.render()">💬 Messages</button>
+                            <button class="sidebar-item active" onclick="Chat.render()">💬 Messages <span id="chat-badge" class="chat-badge" style="display:none">0</span></button>
                             <div class="sidebar-divider"></div>
                             <div class="sidebar-section">
                                 <span class="sidebar-label">Theme</span>
@@ -117,10 +118,11 @@ const Chat = {
                             <button class="sidebar-item" onclick="Dashboard.render()">🏠 Dashboard</button>
                             <button class="sidebar-item" onclick="Dashboard.renderProfile()">👤 Profile</button>
                             <button class="sidebar-item" onclick="Dashboard.renderExploreUsers()">🔍 Explore Users</button>
+                            <button class="sidebar-item" onclick="Dashboard.renderFriendRequests()">👥 Friend Requests</button>
                             <button class="sidebar-item" onclick="Rooms.renderBrowse()">🏠 Browse Rooms</button>
                             <button class="sidebar-item" onclick="Rooms.renderMyPosts()">📝 My Posts</button>
                             <button class="sidebar-item" onclick="Rooms.renderCreate()">➕ Create Post</button>
-                            <button class="sidebar-item active" onclick="Chat.render()">💬 Messages</button>
+                            <button class="sidebar-item active" onclick="Chat.render()">💬 Messages <span id="chat-badge" class="chat-badge" style="display:none">0</span></button>
                             <div class="sidebar-divider"></div>
                             <div class="sidebar-section">
                                 <span class="sidebar-label">Theme</span>
@@ -134,13 +136,13 @@ const Chat = {
                     </nav>
                 </div>
                 <div class="main-content">
-                    <div class="dash-header">
+                    <div class="back-btn">
                         <button class="btn btn-secondary btn-sm" onclick="Chat.render()">← Back to Messages</button>
-                        <div class="dash-welcome">
-                            <h2>Chat with ${otherUserName}</h2>
-                            ${conversation.post_title ? `<p class="dash-subtitle">About: ${conversation.post_title}</p>` : ''}
-                            <span id="connection-status" class="connection-status status-disconnected">○ Disconnected</span>
-                        </div>
+                    </div>
+                    <div class="dash-header">
+                        <h2>Chat with ${otherUserName}</h2>
+                        <p class="dash-subtitle">${conversation.post_title ? conversation.post_title : 'General chat'}</p>
+                        <span id="connection-status" class="connection-status status-disconnected">○ Disconnected</span>
                     </div>
                     <div class="dash-section">
                         <div class="chat-container glass-card">
