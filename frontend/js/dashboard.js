@@ -271,7 +271,8 @@ const Dashboard = {
             Utils.toast("Friend request sent successfully", "success");
             this.showUserDetail(receiverId);
         } catch (err) {
-            Utils.toast("Failed to send friend request: " + err.message, "error");
+            const errorMessage = err.detail || err.message || "Unknown error";
+            Utils.toast("Failed to send friend request: " + errorMessage, "error");
         }
     },
 
