@@ -501,6 +501,7 @@ const Dashboard = {
                         <button class="sidebar-item" onclick="Dashboard.render()">🏠 Dashboard</button>
                         <button class="sidebar-item" onclick="Dashboard.renderProfile()">👤 Profile</button>
                         <button class="sidebar-item active" onclick="Dashboard.renderExploreUsers()">🔍 Explore Users</button>
+                        <button class="sidebar-item" onclick="Dashboard.renderFriendRequests()">👥 Friend Requests</button>
                         <button class="sidebar-item" onclick="Rooms.renderBrowse()">🏠 Browse Rooms</button>
                         <button class="sidebar-item" onclick="Rooms.renderMyPosts()">📝 My Posts</button>
                         <button class="sidebar-item" onclick="Rooms.renderCreate()">➕ Create Post</button>
@@ -534,7 +535,7 @@ const Dashboard = {
                 </div>
             </div>
         </div>`;
-        this.loadExploreUsers();
+        await this.loadExploreUsers();
         Chat.loadUnseenCount();
         this.savePageState('explore-users');
     },
@@ -555,6 +556,7 @@ const Dashboard = {
                             <button class="sidebar-item" onclick="Dashboard.render()">🏠 Dashboard</button>
                             <button class="sidebar-item active" onclick="Dashboard.renderProfile()">👤 Profile</button>
                             <button class="sidebar-item" onclick="Dashboard.renderExploreUsers()">🔍 Explore Users</button>
+                            <button class="sidebar-item" onclick="Dashboard.renderFriendRequests()">👥 Friend Requests</button>
                             <button class="sidebar-item" onclick="Rooms.renderBrowse()">🏠 Browse Rooms</button>
                             <button class="sidebar-item" onclick="Rooms.renderMyPosts()">📝 My Posts</button>
                             <button class="sidebar-item" onclick="Rooms.renderCreate()">➕ Create Post</button>
