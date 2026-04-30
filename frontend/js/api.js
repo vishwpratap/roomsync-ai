@@ -21,7 +21,7 @@ const Api = {
         return data;
     },
 
-    signup(name, password, age, city) { return this.request("POST", "/signup", { name, password, age, city }); },
+    signup(name, password) { return this.request("POST", "/signup", { name, password }); },
     login(name, password) { return this.request("POST", "/login", { name, password }); },
     adminLogin(email, password) { return this.request("POST", "/admin/login", { email, password }); },
     updateProfile(userId, age, profession, gender) { return this.request("PUT", `/user/${userId}`, { age, profession, gender }); },

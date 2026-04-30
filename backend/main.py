@@ -812,7 +812,7 @@ async def signup(data: UserSignup):
     if existing:
         raise HTTPException(status_code=400, detail="Username already exists")
     password_hash = bcrypt.hashpw(data.password.encode("utf-8"), bcrypt.gensalt()).decode("utf-8")
-    user_id = execute_insert("INSERT INTO users (name, password_hash, age, city) VALUES (%s, %s, %s, %s) RETURNING id", (data.name, password_hash, data.age, data.city))
+    user_id = execute_insert("INSERT INTO users (name, password_hash) VALUES (%s, %s) RETURNING id", (data.name, password_hash))
     return {"message": "Account created successfully", "user_id": user_id, "name": data.name}
 
 
@@ -939,7 +939,7 @@ async def add_user_scenarios(data: ScenarioProfileInput):
     preferences = derive_preferences(traits)
     personality = derive_personality(traits)
     roommate_type = classify_user_type(preferences, personality, traits)
-    execute_update("UPDATE users SET age=%s, profession=%s, gender=%s, roommate_type=%s WHERE id=%s", (data.age, data.profession, data.gender, roommate_type, data.user_id))
+    execute_update("UPDATE users SET age=%s, city=%s, profession=%s, gender=%s, roommate_type=%s WHERE id=%s", (data.age, data.city, data.profession, data.gender, roommate_type, data.user_id))
     execute_insert("INSERT INTO preferences (user_id, sleep, cleanliness, noise, smoking, guests, social, cooking) VALUES (%s,%s,%s,%s,%s,%s,%s,%s) ON CONFLICT (user_id) DO UPDATE SET sleep=EXCLUDED.sleep, cleanliness=EXCLUDED.cleanliness, noise=EXCLUDED.noise, smoking=EXCLUDED.smoking, guests=EXCLUDED.guests, social=EXCLUDED.social, cooking=EXCLUDED.cooking", (data.user_id, preferences["sleep"], preferences["cleanliness"], preferences["noise"], preferences["smoking"], preferences["guests"], preferences["social"], preferences["cooking"]))
     execute_insert("INSERT INTO personality (user_id, introvert_extrovert, conflict_style, routine_level, sharing_level) VALUES (%s,%s,%s,%s,%s) ON CONFLICT (user_id) DO UPDATE SET introvert_extrovert=EXCLUDED.introvert_extrovert, conflict_style=EXCLUDED.conflict_style, routine_level=EXCLUDED.routine_level, sharing_level=EXCLUDED.sharing_level", (data.user_id, personality["introvert_extrovert"], personality["conflict_style"], personality["routine_level"], personality["sharing_level"]))
     save_traits(data.user_id, traits)

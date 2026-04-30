@@ -218,6 +218,10 @@ const Questionnaire = {
                     <input type="number" id="q-age" min="16" max="100" value="${this.basicData.age || 22}" required/>
                 </div>
                 <div class="field">
+                    <label for="q-city">City</label>
+                    <input type="text" id="q-city" placeholder="e.g. Mumbai, Delhi" value="${this.basicData.city || ''}" required/>
+                </div>
+                <div class="field">
                     <label for="q-profession">Profession</label>
                     <input type="text" id="q-profession" placeholder="e.g. Student, Engineer" value="${this.basicData.profession || ''}" required/>
                 </div>
@@ -336,7 +340,7 @@ const Questionnaire = {
     async next() {
         if (this.step === 0) {
             this.saveBasicInfo();
-            if (!this.basicData.age || !this.basicData.profession || !this.basicData.gender) {
+            if (!this.basicData.age || !this.basicData.city || !this.basicData.profession || !this.basicData.gender) {
                 Utils.toast("Please fill in all fields", "error");
                 return;
             }
@@ -368,6 +372,7 @@ const Questionnaire = {
             const payload = {
                 user_id: s.user_id,
                 age: this.basicData.age,
+                city: this.basicData.city,
                 profession: this.basicData.profession,
                 gender: this.basicData.gender,
                 responses: this.scenarios.map(sc => ({
