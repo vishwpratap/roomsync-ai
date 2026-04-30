@@ -322,9 +322,11 @@ const Questionnaire = {
 
     saveBasicInfo() {
         const age = Utils.$("#q-age");
+        const city = Utils.$("#q-city");
         const prof = Utils.$("#q-profession");
         const gen = Utils.$("#q-gender");
         if (age) this.basicData.age = parseInt(age.value);
+        if (city) this.basicData.city = city.value.trim();
         if (prof) this.basicData.profession = prof.value.trim();
         if (gen) this.basicData.gender = gen.value;
     },
