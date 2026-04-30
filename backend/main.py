@@ -28,7 +28,7 @@ from risk import detect_risks
 from scenarios import create_scenario, get_all_scenarios, get_scenario_by_id, seed_default_scenarios, update_scenario
 from traits import compute_traits, derive_personality, derive_preferences, get_user_traits, save_scenario_responses, save_traits
 
-app = FastAPI(title="RoomSync AI", description="Behavior-based roommate compatibility platform", version="3.0.0")
+app = FastAPI(title="RoomSync AI", description="Behavior-based roommate compatibility platform", version="3.0.0", default_response_class=JSONResponse)
 
 app.add_middleware(
     CORSMiddleware,
@@ -997,9 +997,9 @@ async def update_user_profile(user_id: int, age: Optional[int] = None, city: Opt
 async def list_users(search: str = Query(default="")):
     """Return all users without compatibility scores for the Explore Users section"""
     if search:
-        users = execute_query("SELECT id, name, age, profession, gender, roommate_type, cluster_id FROM users WHERE age IS NOT NULL AND name LIKE %s ORDER BY name", (f"%{search}%",), fetch_all=True)
+        users = execute_query("SELECT id, name, age, city, profession, gender, roommate_type, cluster_id FROM users WHERE age IS NOT NULL AND name LIKE %s ORDER BY name", (f"%{search}%",), fetch_all=True)
     else:
-        users = execute_query("SELECT id, name, age, profession, gender, roommate_type, cluster_id FROM users WHERE age IS NOT NULL ORDER BY name", fetch_all=True)
+        users = execute_query("SELECT id, name, age, city, profession, gender, roommate_type, cluster_id FROM users WHERE age IS NOT NULL ORDER BY name", fetch_all=True)
     return users or []
 
 
