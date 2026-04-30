@@ -10,6 +10,8 @@ from pydantic import BaseModel, Field
 class UserSignup(BaseModel):
     name: str = Field(..., min_length=2, max_length=100)
     password: str = Field(..., min_length=4)
+    age: int = Field(..., ge=18, le=100)
+    city: str = Field(..., min_length=2, max_length=100)
 
 
 class UserLogin(BaseModel):

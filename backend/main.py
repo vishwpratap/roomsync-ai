@@ -310,6 +310,9 @@ async def setup_db():
             -- Add new columns if they don't exist (for existing databases)
             DO $$
             BEGIN
+                IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'users' AND column_name = 'city') THEN
+                    ALTER TABLE users ADD COLUMN city VARCHAR(100);
+                END IF;
                 IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'users' AND column_name = 'admin_rating') THEN
                     ALTER TABLE users ADD COLUMN admin_rating NUMERIC(2,1) DEFAULT NULL CHECK (admin_rating BETWEEN 0 AND 5);
                 END IF;
@@ -809,7 +812,7 @@ async def signup(data: UserSignup):
     if existing:
         raise HTTPException(status_code=400, detail="Username already exists")
     password_hash = bcrypt.hashpw(data.password.encode("utf-8"), bcrypt.gensalt()).decode("utf-8")
-    user_id = execute_insert("INSERT INTO users (name, password_hash) VALUES (%s, %s) RETURNING id", (data.name, password_hash))
+    user_id = execute_insert("INSERT INTO users (name, password_hash, age, city) VALUES (%s, %s, %s, %s) RETURNING id", (data.name, password_hash, data.age, data.city))
     return {"message": "Account created successfully", "user_id": user_id, "name": data.name}
 
 

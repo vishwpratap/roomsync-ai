@@ -25,6 +25,16 @@ const Auth = {
                         <label for="auth-name">${this.mode === "admin" ? "Admin Email" : "Username"}</label>
                         <input type="text" id="auth-name" placeholder="${this.mode === "admin" ? "admin@roomsync.ai" : "Enter your username"}" required minlength="2" />
                     </div>
+                    ${this.mode === "signup" ? `
+                    <div class="input-group">
+                        <label for="auth-age">Age</label>
+                        <input type="number" id="auth-age" placeholder="Enter your age" required min="18" max="100" />
+                    </div>
+                    <div class="input-group">
+                        <label for="auth-city">City</label>
+                        <input type="text" id="auth-city" placeholder="Enter your city" required minlength="2" />
+                    </div>
+                    ` : ''}
                     <div class="input-group">
                         <label for="auth-pass">Password</label>
                         <input type="password" id="auth-pass" placeholder="Enter your password" required minlength="4" />
@@ -63,7 +73,9 @@ const Auth = {
         try {
             let res;
             if (this.mode === "signup") {
-                res = await Api.signup(nameOrEmail, pass);
+                const age = parseInt(Utils.$("#auth-age").value);
+                const city = Utils.$("#auth-city").value.trim();
+                res = await Api.signup(nameOrEmail, pass, age, city);
                 Utils.setSession({ user_id: res.user_id, name: res.name, has_profile: false, role: "user" });
                 Utils.toast(`Welcome, ${res.name}!`, "success");
                 return App.navigate("questionnaire");

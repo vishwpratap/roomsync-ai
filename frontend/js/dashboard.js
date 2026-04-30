@@ -49,14 +49,6 @@ const Dashboard = {
                     <div class="matches-grid" id="matches-grid"><div class="loader">Loading matches...</div></div>
                 </div>
                 <div class="dash-section">
-                    <h3>🔍 Search and Compare</h3>
-                    <div class="search-bar-wrap">
-                        <input type="text" id="search-input" placeholder="Search users by name..." oninput="Dashboard.search(this.value)"/>
-                        <span class="search-icon">Find</span>
-                    </div>
-                    <div class="search-results" id="search-results"></div>
-                </div>
-                <div class="dash-section">
                     <h3>⚖️ Compare Any Two Users</h3>
                     <div class="compare-section glass-card">
                         <div class="compare-inputs">
@@ -377,28 +369,6 @@ const Dashboard = {
             <div class="match-risk risk-${m.risk_level.toLowerCase()}">${m.risk_level} Risk</div>
             <button class="btn btn-primary btn-sm btn-full" onclick="Compatibility.show(${Utils.getSession().user_id}, ${m.user_id})">View Analysis</button>
         </div>`;
-    },
-
-    async search(q) {
-        const res = Utils.$("#search-results");
-        if (q.length < 1) { res.innerHTML = ""; return; }
-        try {
-            this.allUsers = await Api.searchUsers(q);
-            const s = Utils.getSession();
-            const filtered = this.allUsers.filter(u => u.id !== s.user_id);
-            if (!filtered.length) { res.innerHTML = '<p class="muted">No users found.</p>'; return; }
-            res.innerHTML = `<div class="search-list">${filtered.map(u => `
-                <div class="search-item glass-card">
-                    <div class="search-item-info">
-                        <strong>${u.name}</strong>
-                        <span class="badge badge-sm">${u.roommate_type || "-"}</span>
-                        <div class="match-meta"><span>${u.age || "-"} yrs</span><span>${u.profession || "-"}</span></div>
-                    </div>
-                    <button class="btn btn-primary btn-xs" onclick="Compatibility.show(${s.user_id}, ${u.id})">Compare</button>
-                </div>`).join("")}</div>`;
-        } catch (err) {
-            res.innerHTML = `<p class="muted">${err.message}</p>`;
-        }
     },
 
     async compareSearch(q) {
