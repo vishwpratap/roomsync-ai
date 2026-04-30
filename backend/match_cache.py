@@ -81,7 +81,7 @@ def precompute_matches_for_user(user_id):
 def _get_user_data(user_id):
     """Helper function to get complete user data including preferences and personality"""
     user = execute_query(
-        "SELECT id, name, age, profession, gender, roommate_type, cluster_id FROM users WHERE id=%s",
+        "SELECT id, name, age, city, profession, gender, roommate_type, cluster_id FROM users WHERE id=%s",
         (user_id,),
         fetch_one=True
     )
