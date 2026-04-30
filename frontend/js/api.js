@@ -24,7 +24,7 @@ const Api = {
     signup(name, password) { return this.request("POST", "/signup", { name, password }); },
     login(name, password) { return this.request("POST", "/login", { name, password }); },
     adminLogin(email, password) { return this.request("POST", "/admin/login", { email, password }); },
-    updateProfile(userId, age, profession, gender) { return this.request("PUT", `/user/${userId}`, { age, profession, gender }); },
+    updateProfile(userId, age, city, profession, gender) { return this.request("PUT", `/user/${userId}`, { age, city, profession, gender }); },
     getScenarios() { return this.request("GET", "/scenarios"); },
     addUserScenarios(profileData) { return this.request("POST", "/add-user-scenarios", profileData); },
     addUser(profileData) { return this.request("POST", "/add-user", profileData); },

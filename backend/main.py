@@ -965,7 +965,7 @@ async def get_user(user_id: int):
 
 
 @app.put("/user/{user_id}")
-async def update_user_profile(user_id: int, age: Optional[int] = None, profession: Optional[str] = None, gender: Optional[str] = None):
+async def update_user_profile(user_id: int, age: Optional[int] = None, city: Optional[str] = None, profession: Optional[str] = None, gender: Optional[str] = None):
     user = execute_query("SELECT id FROM users WHERE id=%s", (user_id,), fetch_one=True)
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
@@ -975,6 +975,9 @@ async def update_user_profile(user_id: int, age: Optional[int] = None, professio
     if age is not None:
         updates.append("age=%s")
         params.append(age)
+    if city is not None:
+        updates.append("city=%s")
+        params.append(city)
     if profession is not None:
         updates.append("profession=%s")
         params.append(profession)

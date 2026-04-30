@@ -207,7 +207,19 @@ const Dashboard = {
                 res.innerHTML = '<div class="empty-state"><p>No users found.</p></div>';
                 return;
             }
-            res.innerHTML = `<div class="search-list">${filtered.map(u => this.exploreUserCard(u, s)).join("")}</div>`;
+            // Sort by matching city first
+            const currentUser = await Api.getUser(s.user_id);
+            const userCity = currentUser.city?.toLowerCase() || '';
+            const sorted = filtered.sort((a, b) => {
+                const aCity = a.city?.toLowerCase() || '';
+                const bCity = b.city?.toLowerCase() || '';
+                const aMatch = aCity === userCity;
+                const bMatch = bCity === userCity;
+                if (aMatch && !bMatch) return -1;
+                if (!aMatch && bMatch) return 1;
+                return 0;
+            });
+            res.innerHTML = `<div class="search-list">${sorted.map(u => this.exploreUserCard(u, s)).join("")}</div>`;
         } catch (err) {
             res.innerHTML = `<div class="empty-state"><p>${err.message}</p></div>`;
         }
@@ -227,7 +239,19 @@ const Dashboard = {
                 res.innerHTML = '<p class="muted">No users found.</p>';
                 return;
             }
-            res.innerHTML = `<div class="search-list">${filtered.map(u => this.exploreUserCard(u, s)).join("")}</div>`;
+            // Sort by matching city first
+            const currentUser = await Api.getUser(s.user_id);
+            const userCity = currentUser.city?.toLowerCase() || '';
+            const sorted = filtered.sort((a, b) => {
+                const aCity = a.city?.toLowerCase() || '';
+                const bCity = b.city?.toLowerCase() || '';
+                const aMatch = aCity === userCity;
+                const bMatch = bCity === userCity;
+                if (aMatch && !bMatch) return -1;
+                if (!aMatch && bMatch) return 1;
+                return 0;
+            });
+            res.innerHTML = `<div class="search-list">${sorted.map(u => this.exploreUserCard(u, s)).join("")}</div>`;
         } catch (err) {
             res.innerHTML = `<p class="muted">${err.message}</p>`;
         }
@@ -239,7 +263,7 @@ const Dashboard = {
                 <div class="search-item-info">
                     <strong>${u.name}</strong>
                     <span class="badge badge-sm">${u.roommate_type || "-"}</span>
-                    <div class="match-meta"><span>${u.age || "-"} yrs</span><span>${u.profession || "-"}</span></div>
+                    <div class="match-meta"><span>${u.age || "-"} yrs</span><span>📍 ${u.city || "-"}</span><span>${u.profession || "-"}</span></div>
                 </div>
                 <div class="search-item-actions">
                     <button class="btn btn-secondary btn-xs" onclick="Dashboard.showUserDetail(${u.id})">View</button>
@@ -278,7 +302,8 @@ const Dashboard = {
                             <span class="badge badge-md">${user.roommate_type || "Not Set"}</span>
                             <div class="user-detail-meta">
                                 <span>🎂 ${user.age || "-"} years</span>
-                                <span>💼 ${user.profession || "-"}</span>
+                                <span>� ${user.city || "-"}</span>
+                                <span>� ${user.profession || "-"}</span>
                                 <span>🎓 Cluster ${user.cluster_id ?? "-"}</span>
                             </div>
                         </div>
@@ -361,7 +386,7 @@ const Dashboard = {
             <div class="match-info">
                 <h4>${m.name}</h4>
                 <span class="badge badge-sm">${m.roommate_type || "-"}</span>
-                <div class="match-meta">${m.age ? `<span>${m.age} yrs</span>` : ""}${m.profession ? `<span>${m.profession}</span>` : ""}${m.cluster_id !== null && m.cluster_id !== undefined ? `<span>Cluster ${m.cluster_id}</span>` : ""}</div>
+                <div class="match-meta">${m.age ? `<span>${m.age} yrs</span>` : ""}${m.city ? `<span>📍 ${m.city}</span>` : ""}${m.profession ? `<span>${m.profession}</span>` : ""}${m.cluster_id !== null && m.cluster_id !== undefined ? `<span>Cluster ${m.cluster_id}</span>` : ""}</div>
             </div>
             ${adminRatingSection}
             ${adminThoughtsSection}
@@ -557,6 +582,7 @@ const Dashboard = {
                                 <div class="fields-grid">
                                     <div class="field"><label>Name</label><input type="text" id="profile-name" value="${userData.name || ''}" disabled /></div>
                                     <div class="field"><label>Age</label><input type="number" id="profile-age" value="${userData.age || ''}" /></div>
+                                    <div class="field"><label>City</label><input type="text" id="profile-city" value="${userData.city || ''}" /></div>
                                     <div class="field"><label>Profession</label><input type="text" id="profile-profession" value="${userData.profession || ''}" /></div>
                                     <div class="field"><label>Gender</label><input type="text" id="profile-gender" value="${userData.gender || ''}" /></div>
                                 </div>
@@ -576,11 +602,12 @@ const Dashboard = {
     async updateProfile() {
         const s = Utils.getSession();
         const age = parseInt(Utils.$("#profile-age").value);
+        const city = Utils.$("#profile-city").value.trim();
         const profession = Utils.$("#profile-profession").value.trim();
         const gender = Utils.$("#profile-gender").value.trim();
         
         try {
-            await Api.updateProfile(s.user_id, age, profession, gender);
+            await Api.updateProfile(s.user_id, age, city, profession, gender);
             alert("Profile updated successfully!");
             this.render();
         } catch (err) {
