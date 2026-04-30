@@ -297,6 +297,7 @@ async def setup_db():
                 id SERIAL PRIMARY KEY,
                 name VARCHAR(100) NOT NULL,
                 age INTEGER,
+                city VARCHAR(100),
                 profession VARCHAR(100),
                 gender VARCHAR(20),
                 password_hash VARCHAR(255) NOT NULL,
