@@ -123,95 +123,24 @@ DEFAULT_SCENARIOS = [
 
 
 def force_seed_demo_scenarios():
-    """Force insert 4 demo scenarios regardless of existing data"""
-    demo_scenarios = [
-        {
-            "slug": "cleanliness_kitchen",
-            "title": "Shared Kitchen Cleanup",
-            "question": "Your roommate keeps leaving the shared kitchen a little messy after cooking. What feels most natural to you?",
-            "description": "Use this when you want to measure cleanliness expectations in shared spaces.",
-            "icon": "🧹",
-            "category": "cleanliness",
-            "options": [
-                {"text": "It does not bother me much.", "emoji": "😌", "traits": {"cleanliness_tolerance": 5, "conflict_style": 5, "flexibility": 5}},
-                {"text": "I will usually tidy up and move on.", "emoji": "🧹", "traits": {"cleanliness_tolerance": 3, "conflict_style": 4, "flexibility": 4}},
-                {"text": "I would ask for a cleaner routine.", "emoji": "💬", "traits": {"cleanliness_tolerance": 2, "conflict_style": 3, "flexibility": 3}},
-                {"text": "I expect the kitchen to stay clean every time.", "emoji": "⚠️", "traits": {"cleanliness_tolerance": 1, "conflict_style": 1, "flexibility": 1}},
-            ],
-        },
-        {
-            "slug": "noise_late_night",
-            "title": "Late-Night Noise",
-            "question": "It is getting late and your roommate starts making more noise than usual. What do you usually do?",
-            "description": "Use this to capture sound sensitivity and quiet-hour expectations.",
-            "icon": "🔊",
-            "category": "noise",
-            "options": [
-                {"text": "I can usually ignore it.", "emoji": "😌", "traits": {"noise_tolerance": 5, "conflict_style": 5, "flexibility": 5}},
-                {"text": "I adjust first and see if it settles down.", "emoji": "🎧", "traits": {"noise_tolerance": 4, "conflict_style": 4, "flexibility": 4}},
-                {"text": "I ask them to lower the noise a little.", "emoji": "💬", "traits": {"noise_tolerance": 2, "conflict_style": 3, "flexibility": 3}},
-                {"text": "I want strict quiet hours at night.", "emoji": "🚫", "traits": {"noise_tolerance": 1, "conflict_style": 1, "flexibility": 1}},
-            ],
-        },
-        {
-            "slug": "social_guests",
-            "title": "Unexpected Guests",
-            "question": "Your roommate invites friends over without much notice. What feels closest to your reaction?",
-            "description": "Use this to evaluate guest comfort and social energy.",
-            "icon": "👥",
-            "category": "social",
-            "options": [
-                {"text": "I am usually happy to roll with it.", "emoji": "🎉", "traits": {"social_tolerance": 5, "conflict_style": 5, "flexibility": 5}},
-                {"text": "I can adapt, even if I need a little space.", "emoji": "🏠", "traits": {"social_tolerance": 3, "conflict_style": 4, "flexibility": 4}},
-                {"text": "I would like a heads-up next time.", "emoji": "💬", "traits": {"social_tolerance": 2, "conflict_style": 3, "flexibility": 2}},
-                {"text": "I need firm guest boundaries.", "emoji": "🚫", "traits": {"social_tolerance": 1, "conflict_style": 1, "flexibility": 1}},
-            ],
-        },
-        {
-            "slug": "sharing_items",
-            "title": "Shared Items",
-            "question": "Your roommate uses something of yours without asking. How do you handle it?",
-            "description": "Use this to measure boundaries and shared-property expectations.",
-            "icon": "🤝",
-            "category": "sharing",
-            "options": [
-                {"text": "I am pretty relaxed about sharing.", "emoji": "😊", "traits": {"flexibility": 5, "conflict_style": 5, "social_tolerance": 5}},
-                {"text": "I usually let it go once or twice.", "emoji": "🤷", "traits": {"flexibility": 3, "conflict_style": 3, "social_tolerance": 3}},
-                {"text": "I remind them to ask first next time.", "emoji": "💬", "traits": {"flexibility": 2, "conflict_style": 2, "social_tolerance": 2}},
-                {"text": "I want very clear personal boundaries.", "emoji": "🚫", "traits": {"flexibility": 1, "conflict_style": 1, "social_tolerance": 1}},
-            ],
-        },
-    ]
-    
-    for scenario in demo_scenarios:
-        print(f"[Force Seed] Processing scenario: {scenario['slug']}")
-        # Check if scenario already exists by slug
+    """Force insert 8 default scenarios regardless of existing data"""
+    for scenario in DEFAULT_SCENARIOS:
         existing = execute_query("SELECT id FROM scenarios WHERE slug=%s", (scenario["slug"],), fetch_one=True)
         if existing:
-            # Update existing scenario
-            scenario_id = existing["id"]
-            print(f"[Force Seed] Updating existing scenario with ID: {scenario_id}")
-            execute_update(
-                "UPDATE scenarios SET title=%s, question=%s, description=%s, icon=%s, category=%s WHERE id=%s",
-                (scenario["title"], scenario["question"], scenario.get("description"), scenario.get("icon"), scenario.get("category"), scenario_id),
-            )
-            execute_update("DELETE FROM scenario_options WHERE scenario_id=%s", (scenario_id,))
-            print(f"[Force Seed] Deleted old options for scenario ID: {scenario_id}")
-        else:
-            # Insert new scenario
-            print(f"[Force Seed] Inserting new scenario: {scenario['slug']}")
-            scenario_id = execute_insert(
-                "INSERT INTO scenarios (slug, title, question, description, icon, category) VALUES (%s, %s, %s, %s, %s, %s) RETURNING id",
-                (scenario["slug"], scenario["title"], scenario["question"], scenario.get("description"), scenario.get("icon"), scenario.get("category")),
-            )
-            print(f"[Force Seed] Inserted scenario with ID: {scenario_id}")
+            continue  # Skip if already exists
+        
+        scenario_id = execute_insert(
+            "INSERT INTO scenarios (slug, title, question, description, icon, category) VALUES (%s, %s, %s, %s, %s, %s)",
+            (scenario["slug"], scenario["title"], scenario["question"], scenario.get("description"), scenario.get("icon"), scenario.get("category")),
+        )
+        print(f"[Force Seed] Inserted scenario with ID: {scenario_id}")
         
         # Insert options
         print(f"[Force Seed] Inserting {len(scenario['options'])} options for scenario ID: {scenario_id}")
         for index, option in enumerate(scenario["options"]):
             try:
                 option_id = execute_insert(
-                    "INSERT INTO scenario_options (scenario_id, option_order, option_text, emoji, trait_mapping_json) VALUES (%s, %s, %s, %s, %s) RETURNING id",
+                    "INSERT INTO scenario_options (scenario_id, option_order, option_text, emoji, trait_mapping_json) VALUES (%s, %s, %s, %s, %s)",
                     (scenario_id, index, option["text"], option.get("emoji"), json.dumps(option["traits"])),
                 )
                 print(f"[Force Seed] Inserted option {index} with ID: {option_id}")
@@ -220,7 +149,7 @@ def force_seed_demo_scenarios():
                 import traceback
                 traceback.print_exc()
     
-    return {"message": "Demo scenarios seeded successfully"}
+    return {"message": "8 default scenarios seeded successfully"}
 
 
 def seed_default_scenarios():
