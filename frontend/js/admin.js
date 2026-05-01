@@ -618,7 +618,7 @@ const Admin = {
     },
 
     async clearAndSeedScenarios() {
-        if (!confirm("This will delete all existing scenarios and add 4 demo scenarios. Continue?")) return;
+        if (!confirm("This will delete all existing scenarios and add 8 default scenarios. Continue?")) return;
         try {
             console.log("Clearing scenarios...");
             await fetch(`${API_BASE}/admin/clear-scenarios`, {

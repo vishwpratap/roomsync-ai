@@ -124,6 +124,22 @@ DEFAULT_SCENARIOS = [
 
 def force_seed_demo_scenarios():
     """Force insert 8 default scenarios regardless of existing data"""
+    # Ensure scenario_options table exists (for PostgreSQL compatibility)
+    try:
+        execute_query("""
+            CREATE TABLE IF NOT EXISTS scenario_options (
+                id SERIAL PRIMARY KEY,
+                scenario_id INTEGER,
+                option_order INTEGER DEFAULT 0,
+                option_text VARCHAR(255),
+                emoji VARCHAR(20),
+                trait_mapping_json JSONB,
+                FOREIGN KEY (scenario_id) REFERENCES scenarios(id) ON DELETE CASCADE
+            )
+        """)
+    except Exception as e:
+        print(f"[Force Seed] Note: scenario_options table check: {str(e)}")
+    
     for scenario in DEFAULT_SCENARIOS:
         # Delete existing scenario with same slug if it exists
         existing = execute_query("SELECT id FROM scenarios WHERE slug=%s", (scenario["slug"],), fetch_one=True)
