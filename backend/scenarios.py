@@ -125,9 +125,11 @@ DEFAULT_SCENARIOS = [
 def force_seed_demo_scenarios():
     """Force insert 8 default scenarios regardless of existing data"""
     for scenario in DEFAULT_SCENARIOS:
+        # Delete existing scenario with same slug if it exists
         existing = execute_query("SELECT id FROM scenarios WHERE slug=%s", (scenario["slug"],), fetch_one=True)
         if existing:
-            continue  # Skip if already exists
+            execute_update("DELETE FROM scenario_options WHERE scenario_id=%s", (existing["id"],))
+            execute_update("DELETE FROM scenarios WHERE id=%s", (existing["id"],))
         
         scenario_id = execute_insert(
             "INSERT INTO scenarios (slug, title, question, description, icon, category) VALUES (%s, %s, %s, %s, %s, %s)",
