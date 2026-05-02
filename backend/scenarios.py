@@ -148,7 +148,7 @@ def force_seed_demo_scenarios():
             execute_update("DELETE FROM scenarios WHERE id=%s", (existing["id"],))
         
         scenario_id = execute_insert(
-            "INSERT INTO scenarios (slug, title, question, description, icon, category) VALUES (%s, %s, %s, %s, %s, %s)",
+            "INSERT INTO scenarios (slug, title, question, description, icon, category) VALUES (%s, %s, %s, %s, %s, %s) RETURNING id",
             (scenario["slug"], scenario["title"], scenario["question"], scenario.get("description"), scenario.get("icon"), scenario.get("category")),
         )
         print(f"[Force Seed] Inserted scenario with ID: {scenario_id}")
@@ -177,7 +177,7 @@ def seed_default_scenarios():
 
     for scenario in DEFAULT_SCENARIOS:
         scenario_id = execute_insert(
-            "INSERT INTO scenarios (slug, title, question, description, icon, category) VALUES (%s, %s, %s, %s, %s, %s)",
+            "INSERT INTO scenarios (slug, title, question, description, icon, category) VALUES (%s, %s, %s, %s, %s, %s) RETURNING id",
             (scenario["slug"], scenario["title"], scenario["question"], scenario.get("description"), scenario.get("icon"), scenario.get("category")),
         )
         for index, option in enumerate(scenario["options"]):
