@@ -783,12 +783,22 @@ def _analytics_snapshot():
     stats = {
         "total_users": execute_query("SELECT COUNT(*) AS total FROM users", fetch_one=True)["total"],
         "total_room_posts": execute_query("SELECT COUNT(*) AS total FROM room_posts", fetch_one=True)["total"],
-        "total_matches_generated": execute_query("SELECT COUNT(*) AS total FROM match_logs", fetch_one=True)["total"],
+        "active_profiles": execute_query("SELECT COUNT(*) AS total FROM users WHERE age IS NOT NULL AND roommate_type IS NOT NULL", fetch_one=True)["total"],
+        "total_compatibility_checks": execute_query("SELECT COUNT(*) AS total FROM match_logs", fetch_one=True)["total"],
     }
+    
+    # Get new users in last 7 days
+    new_users = execute_query("SELECT COUNT(*) AS total FROM users WHERE created_at >= NOW() - INTERVAL '7 days'", fetch_one=True)
+    stats["new_users_7days"] = new_users["total"] if new_users else 0
+    
+    # Get friend requests
+    friend_requests = execute_query("SELECT COUNT(*) AS total FROM friend_requests", fetch_one=True)
+    stats["total_friend_requests"] = friend_requests["total"] if friend_requests else 0
+    
     logs = execute_query("SELECT compatibility_score, risk_level, conflict_types_json FROM match_logs", fetch_all=True) or []
     if not logs:
         stats["risk_distribution"] = {"LOW": 0, "MEDIUM": 0, "HIGH": 0}
-        stats["analytics"] = {"high_risk_matches_percent": 0, "most_common_conflict_types": [], "average_compatibility_score": 0}
+        stats["analytics"] = {"high_risk_matches_percent": 0, "most_common_conflict_types": [], "average_compatibility_score": 0, "high_compatibility_percent": 0}
         return stats
 
     risk_counts = Counter(log["risk_level"] for log in logs)
@@ -798,11 +808,14 @@ def _analytics_snapshot():
             conflict_counts[conflict] += 1
 
     total_logs = len(logs)
+    high_compat_count = sum(1 for log in logs if float(log["compatibility_score"]) >= 75)
+    
     stats["risk_distribution"] = {"LOW": risk_counts.get("LOW", 0), "MEDIUM": risk_counts.get("MEDIUM", 0), "HIGH": risk_counts.get("HIGH", 0)}
     stats["analytics"] = {
         "high_risk_matches_percent": round((risk_counts.get("HIGH", 0) / total_logs) * 100, 1),
         "most_common_conflict_types": [{"type": key, "count": value} for key, value in conflict_counts.most_common(5)],
         "average_compatibility_score": round(sum(float(log["compatibility_score"]) for log in logs) / total_logs, 1),
+        "high_compatibility_percent": round((high_compat_count / total_logs) * 100, 1),
     }
     return stats
 

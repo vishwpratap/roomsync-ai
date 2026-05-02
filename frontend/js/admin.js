@@ -233,23 +233,39 @@ const Admin = {
             target.innerHTML = '<div class="loader">Loading...</div>';
             const data = await Api.getAdminDashboard();
             target.innerHTML = `
-            <h3>📊 Overview</h3>
+            <h3>📊 Platform Overview</h3>
             <div class="admin-stats-grid">
                 <div class="admin-stat-item">
                     <span class="stat-value">${data.total_users || 0}</span>
                     <span class="stat-label">Total Users</span>
                 </div>
                 <div class="admin-stat-item">
+                    <span class="stat-value">${data.active_profiles || 0}</span>
+                    <span class="stat-label">Active Profiles</span>
+                </div>
+                <div class="admin-stat-item">
+                    <span class="stat-value">+${data.new_users_7days || 0}</span>
+                    <span class="stat-label">New (7 days)</span>
+                </div>
+                <div class="admin-stat-item">
                     <span class="stat-value">${data.total_room_posts || 0}</span>
                     <span class="stat-label">Room Posts</span>
                 </div>
                 <div class="admin-stat-item">
-                    <span class="stat-value">${data.total_matches_generated || 0}</span>
-                    <span class="stat-label">Matches</span>
+                    <span class="stat-value">${data.total_compatibility_checks || 0}</span>
+                    <span class="stat-label">Compatibility Checks</span>
+                </div>
+                <div class="admin-stat-item">
+                    <span class="stat-value">${data.total_friend_requests || 0}</span>
+                    <span class="stat-label">Friend Requests</span>
                 </div>
                 <div class="admin-stat-item">
                     <span class="stat-value">${data.analytics?.average_compatibility_score || 0}%</span>
-                    <span class="stat-label">Avg Score</span>
+                    <span class="stat-label">Avg Compatibility</span>
+                </div>
+                <div class="admin-stat-item">
+                    <span class="stat-value">${data.analytics?.high_compatibility_percent || 0}%</span>
+                    <span class="stat-label">High Matches (75%+)</span>
                 </div>
             </div>`;
         } catch (err) {
