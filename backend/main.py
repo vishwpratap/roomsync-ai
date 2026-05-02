@@ -1144,8 +1144,15 @@ async def check_compatibility(data: CompatibilityRequest):
             
             recommendation = generate_recommendation(cached["compatibility_score"], cached["risk_level"])
 
-            user1, _, _, _ = _get_user_data(data.user1_id)
-            user2, _, _, _ = _get_user_data(data.user2_id)
+            try:
+                user1, _, _, _ = _get_user_data(data.user1_id)
+            except HTTPException:
+                user1 = execute_query("SELECT id, name, roommate_type FROM users WHERE id=%s", (data.user1_id,), fetch_one=True) or {"name": "Unknown", "roommate_type": None}
+            
+            try:
+                user2, _, _, _ = _get_user_data(data.user2_id)
+            except HTTPException:
+                user2 = execute_query("SELECT id, name, roommate_type FROM users WHERE id=%s", (data.user2_id,), fetch_one=True) or {"name": "Unknown", "roommate_type": None}
 
             return {
                 "match": round(cached["compatibility_score"]),
@@ -1164,16 +1171,23 @@ async def check_compatibility(data: CompatibilityRequest):
                 "recommendation": recommendation,
                 "highlights": highlights,
                 "warnings": warnings,
-                "user1_name": user1["name"],
-                "user2_name": user2["name"],
+                "user1_name": user1.get("name", "Unknown"),
+                "user2_name": user2.get("name", "Unknown"),
                 "user1_type": user1.get("roommate_type"),
                 "user2_type": user2.get("roommate_type"),
                 "cached": True
             }
 
         # Calculate if not in cache
-        user1, preferences1, personality1, traits1 = _get_user_data(data.user1_id)
-        user2, preferences2, personality2, traits2 = _get_user_data(data.user2_id)
+        try:
+            user1, preferences1, personality1, traits1 = _get_user_data(data.user1_id)
+        except HTTPException:
+            raise HTTPException(status_code=404, detail=f"User {data.user1_id} has not completed their profile or data is incomplete")
+        
+        try:
+            user2, preferences2, personality2, traits2 = _get_user_data(data.user2_id)
+        except HTTPException:
+            raise HTTPException(status_code=404, detail=f"User {data.user2_id} has not completed their profile or data is incomplete")
         result = calculate_compatibility(preferences1, preferences2, personality1, personality2, user1.get("cluster_id"), user2.get("cluster_id"), traits1, traits2)
         risk_info = detect_risks(preferences1, preferences2, personality1, personality2, traits1, traits2)
         recommendation = generate_recommendation(result["total_score"], risk_info["risk_level"])
