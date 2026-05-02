@@ -208,17 +208,23 @@ const Dashboard = {
                 return;
             }
             // Sort by matching city first
-            const currentUser = await Api.getUser(s.user_id);
-            const userCity = currentUser.city?.toLowerCase() || '';
-            const sorted = filtered.sort((a, b) => {
-                const aCity = a.city?.toLowerCase() || '';
-                const bCity = b.city?.toLowerCase() || '';
-                const aMatch = aCity === userCity;
-                const bMatch = bCity === userCity;
-                if (aMatch && !bMatch) return -1;
-                if (!aMatch && bMatch) return 1;
-                return 0;
-            });
+            let sorted = filtered;
+            try {
+                const currentUser = await Api.getUser(s.user_id);
+                const userCity = currentUser.city?.toLowerCase() || '';
+                sorted = filtered.sort((a, b) => {
+                    const aCity = a.city?.toLowerCase() || '';
+                    const bCity = b.city?.toLowerCase() || '';
+                    const aMatch = aCity === userCity;
+                    const bMatch = bCity === userCity;
+                    if (aMatch && !bMatch) return -1;
+                    if (!aMatch && bMatch) return 1;
+                    return 0;
+                });
+            } catch (err) {
+                console.log("Could not fetch current user for city sorting:", err.message);
+                // Continue without sorting if user fetch fails
+            }
             res.innerHTML = `<div class="search-list">${sorted.map(u => this.exploreUserCard(u, s)).join("")}</div>`;
         } catch (err) {
             res.innerHTML = `<div class="empty-state"><p>${err.message}</p></div>`;
@@ -240,17 +246,23 @@ const Dashboard = {
                 return;
             }
             // Sort by matching city first
-            const currentUser = await Api.getUser(s.user_id);
-            const userCity = currentUser.city?.toLowerCase() || '';
-            const sorted = filtered.sort((a, b) => {
-                const aCity = a.city?.toLowerCase() || '';
-                const bCity = b.city?.toLowerCase() || '';
-                const aMatch = aCity === userCity;
-                const bMatch = bCity === userCity;
-                if (aMatch && !bMatch) return -1;
-                if (!aMatch && bMatch) return 1;
-                return 0;
-            });
+            let sorted = filtered;
+            try {
+                const currentUser = await Api.getUser(s.user_id);
+                const userCity = currentUser.city?.toLowerCase() || '';
+                sorted = filtered.sort((a, b) => {
+                    const aCity = a.city?.toLowerCase() || '';
+                    const bCity = b.city?.toLowerCase() || '';
+                    const aMatch = aCity === userCity;
+                    const bMatch = bCity === userCity;
+                    if (aMatch && !bMatch) return -1;
+                    if (!aMatch && bMatch) return 1;
+                    return 0;
+                });
+            } catch (err) {
+                console.log("Could not fetch current user for city sorting:", err.message);
+                // Continue without sorting if user fetch fails
+            }
             res.innerHTML = `<div class="search-list">${sorted.map(u => this.exploreUserCard(u, s)).join("")}</div>`;
         } catch (err) {
             res.innerHTML = `<p class="muted">${err.message}</p>`;
